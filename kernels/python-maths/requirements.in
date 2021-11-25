@@ -1,0 +1,18 @@
+# math-base
+matplotlib
+scipy
+numpy
+plotly
+sympy
+h5py
+scikit-learn
+
+pandas
+# optional extensions for pandas
+xlrd
+xlwt
+openpyxl
+
+# jupyter-extensions
+ipywidgets
+ipympl
