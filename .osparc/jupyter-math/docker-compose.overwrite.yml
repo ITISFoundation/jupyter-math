@@ -1,0 +1,4 @@
+services:
+  jupyter-math:
+    build:
+      dockerfile: Dockerfile
