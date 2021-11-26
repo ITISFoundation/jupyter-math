@@ -4,10 +4,10 @@ on: push
 
 jobs:
   verify-image-build:
+    runs-on: ubuntu-latest
     strategy:
       matrix:
-        ci-service-integration-library-version: v1.0.1-dev
-    runs-on: ubuntu-latest
+        ci-service-integration-library-version: "v1.0.1-dev"
     steps:
       - name: Checkout repo content
         uses: actions/checkout@v2
