@@ -1,0 +1,11 @@
+name: Build and check image
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo content
+        uses: actions/checkout@v2
+      - name: Run pandoc
+        uses: docker://itisfoundation/ci-service-integration-library:v1.0.1-dev
+        run: ooil --version 
