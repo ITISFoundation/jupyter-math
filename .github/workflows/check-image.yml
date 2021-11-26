@@ -3,13 +3,20 @@ name: Build and check image
 on: push
 
 jobs:
-  deploy:
+  verify-image-build:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repo content
         uses: actions/checkout@v2
-      - name: Run pandoc
+      - name: ooil version
         uses: docker://itisfoundation/ci-service-integration-library:v1.0.1-dev
         with:
-          args: >-
-            ooil --version
+          args: ooil --version
+      - name: Assemble docker-compose spec
+        uses: docker://itisfoundation/ci-service-integration-library:v1.0.1-dev
+        with:
+          args: ooil compose
+      - name: Build all images if multiple
+        uses: docker://itisfoundation/ci-service-integration-library:v1.0.1-dev
+        with:
+          args: docker-compose build
