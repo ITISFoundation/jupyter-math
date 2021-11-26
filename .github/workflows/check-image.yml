@@ -5,21 +5,18 @@ on: push
 jobs:
   verify-image-build:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        ci-service-integration-library-version: "v1.0.1-dev"
     steps:
       - name: Checkout repo content
         uses: actions/checkout@v2
       - name: ooil version
-        uses: docker://itisfoundation/ci-service-integration-library:${{ matrix.ci-service-integration-library }}
+        uses: docker://itisfoundation/ci-service-integration-library:v1.0.1-dev
         with:
           args: ooil --version
       - name: Assemble docker-compose spec
-        uses: docker://itisfoundation/ci-service-integration-library:${{ matrix.ci-service-integration-library }}
+        uses: docker://itisfoundation/ci-service-integration-library:v1.0.1-dev
         with:
           args: ooil compose
       - name: Build all images if multiple
-        uses: docker://itisfoundation/ci-service-integration-library:${{ matrix.ci-service-integration-library }}
+        uses: docker://itisfoundation/ci-service-integration-library:v1.0.1-dev
         with:
           args: docker-compose build
