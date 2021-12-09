@@ -71,11 +71,8 @@ source .venv/bin/activate
 #
 VOILA_NOTEBOOK="${NOTEBOOK_BASE_DIR}"/work/voila.ipynb
 
-if [ "${DY_BOOT_OPTION_BOOT_MODE}" -ne 1 ]; then
-    # disable the preview if this is not the voila service
-    jupyter labextension disable  @jupyter-voila/jupyterlab-preview
-else
-    echo "$INFO" "Found DY_BOOT_OPTION_BOOT_MODE=${DY_BOOT_OPTION_BOOT_MODE}... Starting in voila mode"
+if [ "${DY_BOOT_OPTION_BOOT_MODE}" -ne 0 ]; then
+    echo "$INFO" "Found DY_BOOT_OPTION_BOOT_MODE=${DY_BOOT_OPTION_BOOT_MODE}... Trying to start in voila mode"
 fi
 
 if [ "${DY_BOOT_OPTION_BOOT_MODE}" -eq 1 ] && [ -f "${VOILA_NOTEBOOK}" ]; then
