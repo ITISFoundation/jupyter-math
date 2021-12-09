@@ -28,12 +28,7 @@ ok = os.environ.get("SC_BOOT_MODE").lower() == "debug"
 # Queries host
 ok = (
     ok
-    or urlopen(
-        "{host}{baseurl}".format(
-            host=sys.argv[1], baseurl=os.environ.get("SIMCORE_NODE_BASEPATH", "")
-        )  # adds a base-path if defined in environ
-    ).getcode()
-    == 200
+    or urlopen("{host}".format(host=sys.argv[1])).getcode() == 200
 )
 
 sys.exit(HEALTHY if ok else UNHEALTHY)

@@ -7,7 +7,8 @@ FROM jupyter/minimal-notebook:${JUPYTER_MINIMAL_VERSION} as service-base
 LABEL maintainer="pcrespov"
 
 ENV JUPYTER_ENABLE_LAB="yes"
-ENV NOTEBOOK_TOKEN="simcore"
+# autentication is disabled for now
+ENV NOTEBOOK_TOKEN=""
 ENV NOTEBOOK_BASE_DIR="$HOME/work"
 
 USER root
@@ -40,61 +41,18 @@ RUN conda install --quiet --yes \
   jupyter labextension install jupyterlab-plotly@^4.8.1 --no-build &&\
   # https://github.com/jupyterlab/jupyterlab-latex/
   jupyter labextension install @jupyterlab/latex@2.0.1 --no-build &&\
+  # Install voila parts. This may done higher up in the chain such that the other flavors also have it
+  pip install voila && \
+  jupyter serverextension enable voila --sys-prefix && \
+  jupyter labextension install @jupyter-voila/jupyterlab-preview --no-build && \
   # ---
   jupyter lab build -y && \
   jupyter lab clean -y && \
   npm cache clean --force && \
   rm -rf /home/$NB_USER/.cache/yarn && \
   rm -rf /home/$NB_USER/.node-gyp && \
-  fix-permissions $CONDA_DIR && \
-  fix-permissions /home/$NB_USER
+  fix-permissions $CONDA_DIR
 
-
-# sidecar functionality -------------------------------------
-
-# set up oSparc env variables
-ENV INPUTS_FOLDER="${NOTEBOOK_BASE_DIR}/inputs" \
-  OUTPUTS_FOLDER="${NOTEBOOK_BASE_DIR}/outputs" \
-  SIMCORE_NODE_UUID="-1" \
-  SIMCORE_USER_ID="-1" \
-  SIMCORE_NODE_BASEPATH="" \
-  SIMCORE_NODE_APP_STATE_PATH="${NOTEBOOK_BASE_DIR}" \
-  STORAGE_ENDPOINT="-1" \
-  S3_ENDPOINT="-1" \
-  S3_ACCESS_KEY="-1" \
-  S3_SECRET_KEY="-1" \
-  S3_BUCKET_NAME="-1" \
-  POSTGRES_ENDPOINT="-1" \
-  POSTGRES_USER="-1" \
-  POSTGRES_PASSWORD="-1" \
-  POSTGRES_DB="-1"
-
-# Copying boot scripts
-COPY --chown=$NB_UID:$NB_GID docker /docker
-
-# # Copying packages/common
-# COPY --chown=$NB_UID:$NB_GID packages/jupyter-commons /packages/jupyter-commons
-# COPY --chown=$NB_UID:$NB_GID packages/jupyter-commons/common_jupyter_notebook_config.py /home/$NB_USER/.jupyter/jupyter_notebook_config.py
-# COPY --chown=$NB_UID:$NB_GID packages/jupyter-commons/state_puller.py /docker/state_puller.py
-
-# # Installing all dependences to run handlers & remove packages
-# RUN pip install /packages/jupyter-commons["jupyter-minimal"]
-# USER root
-# RUN rm -rf /packages
-# USER $NB_UID
-
-ENV PYTHONPATH="/src:$PYTHONPATH"
-USER $NB_USER
-
-RUN mkdir --parents --verbose "${INPUTS_FOLDER}"; \
-  mkdir --parents --verbose "${OUTPUTS_FOLDER}/output_1" \
-  mkdir --parents --verbose "${OUTPUTS_FOLDER}/output_2" \
-  mkdir --parents --verbose "${OUTPUTS_FOLDER}/output_3" \
-  mkdir --parents --verbose "${OUTPUTS_FOLDER}/output_4"
-
-EXPOSE 8888
-
-ENTRYPOINT [ "/bin/bash", "/docker/run.bash" ]
 
 # --------------------------------------------------------------------
 FROM service-base as service-with-kernel
@@ -107,6 +65,8 @@ USER root
 # TODO: [optimize] install/uninstall in single run when used only?
 RUN apt-get update \
   && apt-get install -yq --no-install-recommends \
+  # required by run.bash
+  gosu \
   octave \
   gnuplot \
   ghostscript \
@@ -114,8 +74,7 @@ RUN apt-get update \
   && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # NOTE: do not forget c.KernelSpecManager.ensure_native_kernel = False as well
-RUN jupyter kernelspec remove -f python3  &&\
-  fix-permissions /home/$NB_USER
+RUN jupyter kernelspec remove -f python3
 
 RUN conda install --quiet --yes \
   'octave_kernel' \
@@ -123,10 +82,9 @@ RUN conda install --quiet --yes \
   'watchdog[watchmedo]' \
   && \
   conda clean -tipsy && \
-  fix-permissions $CONDA_DIR && \
-  fix-permissions /home/$NB_USER
+  fix-permissions $CONDA_DIR
 
-USER $NB_UID
+
 WORKDIR ${HOME}
 
 RUN python3 -m venv .venv &&\
@@ -148,9 +106,15 @@ RUN .venv/bin/pip --no-cache --quiet install -r ${NOTEBOOK_BASE_DIR}/requirement
 # Import matplotlib the first time to build the font cache.
 ENV XDG_CACHE_HOME /home/$NB_USER/.cache/
 RUN MPLBACKEND=Agg .venv/bin/python -c "import matplotlib.pyplot" && \
+  # run fix permissions only once
   fix-permissions /home/$NB_USER
 
-# Install voila parts. This may done higher up in the chain such that the other flavors also have it
-RUN pip install voila
-RUN jupyter serverextension enable voila --sys-prefix
-RUN jupyter labextension install @jupyter-voila/jupyterlab-preview
+
+# Copying boot scripts
+COPY --chown=$NB_UID:$NB_GID docker /docker
+
+ENV PYTHONPATH="/src:$PYTHONPATH"
+
+EXPOSE 8888
+
+ENTRYPOINT [ "/bin/bash", "/docker/entrypoint.bash" ]
