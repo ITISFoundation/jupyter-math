@@ -16,3 +16,4 @@ openpyxl
 # jupyter-extensions
 ipywidgets
 ipympl
+jupyter_contrib_nbextensions
