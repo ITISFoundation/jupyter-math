@@ -9,13 +9,14 @@ echo "$INFO" "  User    :$(id "$(whoami)")"
 echo "$INFO" "  Workdir :$(pwd)"
 
 
-ls -lah ${DY_SIDECAR_PATH_OUTPUTS}
+ls -lah "${DY_SIDECAR_PATH_OUTPUTS}"
 # create output folder strucutre
 echo "Creating missing paths in ${DY_SIDECAR_PATH_OUTPUTS}"
-mkdir -p ${DY_SIDECAR_PATH_OUTPUTS}/output_1
-mkdir -p ${DY_SIDECAR_PATH_OUTPUTS}/output_2
-mkdir -p ${DY_SIDECAR_PATH_OUTPUTS}/output_3
-mkdir -p ${DY_SIDECAR_PATH_OUTPUTS}/output_4
+mkdir -p "${DY_SIDECAR_PATH_OUTPUTS}/output_1"
+mkdir -p "${DY_SIDECAR_PATH_OUTPUTS}/output_2"
+mkdir -p "${DY_SIDECAR_PATH_OUTPUTS}/output_3"
+mkdir -p "${DY_SIDECAR_PATH_OUTPUTS}/output_4"
+ls -lah "${DY_SIDECAR_PATH_OUTPUTS}"
 
 # Trust all notebooks in the notebooks folder
 echo "$INFO" "trust all notebooks in path..."
