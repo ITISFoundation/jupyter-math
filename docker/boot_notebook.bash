@@ -9,7 +9,6 @@ echo "$INFO" "  User    :$(id "$(whoami)")"
 echo "$INFO" "  Workdir :$(pwd)"
 
 
-ls -lah "${DY_SIDECAR_PATH_OUTPUTS}"
 # create output folder strucutre
 echo "Creating missing paths in ${DY_SIDECAR_PATH_OUTPUTS}"
 mkdir -p "${DY_SIDECAR_PATH_OUTPUTS}/output_1"
