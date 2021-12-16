@@ -9,7 +9,7 @@ description:
 
   "
 key: simcore/services/dynamic/jupyter-math
-version: 1.6.13
+version: 2.0.0
 integration-version: 1.0.0
 type: dynamic
 authors:
@@ -28,28 +28,28 @@ inputs:
     displayOrder: 1.0
     label: input_files_1
     description:
-      Any input files. One or serveral files compressed in a zip will be
+      Any input files. One or several files compressed in a zip will be
       downloaded in an inputs folder.
     type: data:*/*
   input_2:
     displayOrder: 2.0
     label: input_files_2
     description:
-      Any input files. One or serveral files compressed in a zip will be
+      Any input files. One or several files compressed in a zip will be
       downloaded in an inputs folder.
     type: data:*/*
   input_3:
     displayOrder: 3.0
     label: input_files_3
     description:
-      Any input files. One or serveral files compressed in a zip will be
+      Any input files. One or several files compressed in a zip will be
       downloaded in an inputs folder.
     type: data:*/*
   input_4:
     displayOrder: 4.0
     label: input_files_4
     description:
-      Any input files. One or serveral files compressed in a zip will be
+      Any input files. One or several files compressed in a zip will be
       downloaded in an inputs folder.
     type: data:*/*
 outputs:
@@ -84,4 +84,6 @@ boot-options:
         description: Tooltip for non Voila boot mode
       "1":
         label: Voila
-        description: To start as Voila save a notebook as "voila.ipynb" in the root folder
+        description:
+          To start as Voila save a notebook as "voila.ipynb" in the root
+          folder

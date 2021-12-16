@@ -14,7 +14,10 @@ settings:
         NanoCPUs: 4000000000
         MemoryBytes: 17179869184
 paths-mapping:
-  inputs_path: /home/jovyan/work/inputs
-  outputs_path: /home/jovyan/work/outputs
+  inputs_path: /tmp/inputs
+  outputs_path: /tmp/outputs
   state_paths:
-    - /home/jovyan/work/work
+    - /home/jovyan/work
+  state_exclude:
+    - /home/jovyan/work/inputs
+    - /home/jovyan/work/outputs

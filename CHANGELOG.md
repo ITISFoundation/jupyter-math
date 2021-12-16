@@ -1,5 +1,19 @@
 # Changelog
 
+## [2.0.0] - 2021-12-16
+
+- updated to run via dynamic-sidecar
+- output can be uploaded via the usage of symlinks
+- security enhancements
+- updated to python version 3.9.7
+- updated to jupuyter-lab version 3.2.4
+
+### BREAKING CHANGES:
+
+- outputs will no longer be synced with the state of the service, these are pulled by the dynamic-sidecar. The user can read them but not modify them
+- inputs will no longer be synced with the state of the service.
+
+
 ## [1.6.13] - 2021-10-04
 ### Changed
 - update installation of jupyter-commons with "jupyter-minimal" optional requirements
