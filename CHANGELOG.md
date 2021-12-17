@@ -10,8 +10,10 @@
 
 ### BREAKING CHANGES:
 
-- outputs will no longer be synced with the state of the service, these are pulled by the dynamic-sidecar. The user can read them but not modify them
-- inputs will no longer be synced with the state of the service.
+- **inputs are currently read only**
+- outputs will no longer be synced with the state of the service, these are pulled by the dynamic-sidecar before starting the service
+- inputs will no longer be synced with the state of the service, when the interface of the 
+service is displayed inputs will be fetched 
 
 
 ## [1.6.13] - 2021-10-04
