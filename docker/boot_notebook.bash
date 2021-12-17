@@ -8,16 +8,6 @@ INFO="INFO: [$(basename "$0")] "
 echo "$INFO" "  User    :$(id "$(whoami)")"
 echo "$INFO" "  Workdir :$(pwd)"
 
-
-# create output folder strucutre
-echo "Creating missing paths in ${DY_SIDECAR_PATH_OUTPUTS}"
-mkdir -p "${DY_SIDECAR_PATH_OUTPUTS}/output_1"
-mkdir -p "${DY_SIDECAR_PATH_OUTPUTS}/output_2"
-mkdir -p "${DY_SIDECAR_PATH_OUTPUTS}/output_3"
-mkdir -p "${DY_SIDECAR_PATH_OUTPUTS}/output_4"
-ls -lah "${DY_SIDECAR_PATH_OUTPUTS}"
-
-echo "Creating symlinks to inputs and outputs"
 echo "Creating symlink from ${DY_SIDECAR_PATH_OUTPUTS} to ${NOTEBOOK_BASE_DIR}/outputs"
 ln -s "${DY_SIDECAR_PATH_OUTPUTS}" "${NOTEBOOK_BASE_DIR}/outputs"
 echo "Creating symlink from ${DY_SIDECAR_PATH_INPUTS} to ${NOTEBOOK_BASE_DIR}/inputs"
