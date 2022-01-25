@@ -8,11 +8,6 @@ INFO="INFO: [$(basename "$0")] "
 echo "$INFO" "  User    :$(id "$(whoami)")"
 echo "$INFO" "  Workdir :$(pwd)"
 
-echo "Creating symlink from ${DY_SIDECAR_PATH_OUTPUTS} to ${NOTEBOOK_BASE_DIR}/outputs"
-ln -s "${DY_SIDECAR_PATH_OUTPUTS}" "${NOTEBOOK_BASE_DIR}/outputs"
-echo "Creating symlink from ${DY_SIDECAR_PATH_INPUTS} to ${NOTEBOOK_BASE_DIR}/inputs"
-ln -s "${DY_SIDECAR_PATH_INPUTS}" "${NOTEBOOK_BASE_DIR}/inputs"
-
 # Trust all notebooks in the notebooks folder
 echo "$INFO" "trust all notebooks in path..."
 find "${NOTEBOOK_BASE_DIR}" -name '*.ipynb' -type f -exec jupyter trust {} +
@@ -65,7 +60,7 @@ source .venv/bin/activate
 #   In the future, we should have a option in the dashboard to configure how jsmash should be
 #   initiated (only for the owner of the coresponding study)
 #
-VOILA_NOTEBOOK="${NOTEBOOK_BASE_DIR}"/voila.ipynb
+VOILA_NOTEBOOK="${NOTEBOOK_BASE_DIR}"/scratch/voila.ipynb
 
 if [ "${DY_BOOT_OPTION_BOOT_MODE}" -ne 0 ]; then
     echo "$INFO" "Found DY_BOOT_OPTION_BOOT_MODE=${DY_BOOT_OPTION_BOOT_MODE}... Trying to start in voila mode"
