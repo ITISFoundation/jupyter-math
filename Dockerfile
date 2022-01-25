@@ -90,7 +90,6 @@ RUN python3 -m venv .venv &&\
   && \
   jupyter kernelspec list
 
-COPY --chown=$NB_UID:$NB_GID CHANGELOG.md ${NOTEBOOK_BASE_DIR}/CHANGELOG.md
 # copy and resolve dependecies to be up to date
 COPY --chown=$NB_UID:$NB_GID kernels/python-maths/requirements.in ${NOTEBOOK_BASE_DIR}/requirements.in
 RUN .venv/bin/pip --no-cache install pip-tools && \
@@ -103,6 +102,14 @@ ENV XDG_CACHE_HOME /home/$NB_USER/.cache/
 RUN MPLBACKEND=Agg .venv/bin/python -c "import matplotlib.pyplot" && \
   # run fix permissions only once
   fix-permissions /home/$NB_USER
+
+# copy README and CHANGELOG
+COPY --chown=$NB_UID:$NB_GID CHANGELOG.md ${NOTEBOOK_BASE_DIR}/CHANGELOG.md
+COPY --chown=$NB_UID:$NB_GID NOTEBOOK_README.md ${NOTEBOOK_BASE_DIR}/README.md
+# remove write permissions from files which are not supposed to be edited
+RUN chmod gu-w ${NOTEBOOK_BASE_DIR}/CHANGELOG.md && \
+  chmod gu-w ${NOTEBOOK_BASE_DIR}/README.md && \
+  chmod gu-w ${NOTEBOOK_BASE_DIR}/requirements.txt
 
 # Copying boot scripts
 COPY --chown=$NB_UID:$NB_GID docker /docker
