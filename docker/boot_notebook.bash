@@ -68,7 +68,7 @@ fi
 
 if [ "${DY_BOOT_OPTION_BOOT_MODE}" -eq 1 ] && [ -f "${VOILA_NOTEBOOK}" ]; then
     echo "$INFO" "Found ${VOILA_NOTEBOOK}... Starting in voila mode"
-    voila "${VOILA_NOTEBOOK}" --enable_nbextensions=True --port 8888 --no-browser
+    voila "${VOILA_NOTEBOOK}" --enable_nbextensions=True --port 8888 --Voila.ip="0.0.0.0" --no-browser
 else
     # call the notebook with the basic parameters
     start-notebook.sh --config .jupyter_config.json "$@"
