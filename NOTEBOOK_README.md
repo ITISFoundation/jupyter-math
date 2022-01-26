@@ -21,3 +21,6 @@ It is advisable to first write the data to a different directory, once all the d
 This notebook supports boot as voila mode. To start a notebook as voila, set the `Boot Mode` to `Voila` in the platform. Make sure to create a notebook called `voila.ipynb` in the `~/work/scratch/` directory.
 Once the two above conditions are met the notebook will no longer start as JupyterLab but as Voila.
 
+#### Have an issue?
+
+Please open an issue on GitHub at [ITISFoundation/jupyter-math](https://github.com/ITISFoundation/jupyter-math)
