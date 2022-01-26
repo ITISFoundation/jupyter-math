@@ -1,5 +1,9 @@
 # Changelog
 
+## [2.0.1] - 2022-01-26
+
+- changed voila to serve on 0.0.0.0 from localhost
+
 ## [2.0.0] - 2021-12-16
 
 - updated to run via dynamic-sidecar

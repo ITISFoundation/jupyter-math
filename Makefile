@@ -4,7 +4,7 @@ SHELL = /bin/sh
 .DEFAULT_GOAL := help
 
 export DOCKER_IMAGE_NAME ?= jupyter-math
-export DOCKER_IMAGE_TAG ?= 2.0.0
+export DOCKER_IMAGE_TAG ?= 2.0.1
 
 .PHONY: publish-local-registry
 publish-local-registry:
