@@ -1,5 +1,11 @@
 # Changelog
 
+## [2.0.2] - 2022-01-27
+
+- changed scratch folder to workspace
+- renamed default boot mode
+
+
 ## [2.0.1] - 2022-01-26
 
 - changed voila to serve on 0.0.0.0 from localhost

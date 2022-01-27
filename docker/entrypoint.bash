@@ -59,8 +59,8 @@ else
     echo "adding $NB_USER to group $CONT_GROUPNAME..."
     usermod -a -G "$CONT_GROUPNAME" "$NB_USER" 
     
-    echo "Chainging owner ship of state directory /home/${NB_USER}/work/scratch"
-    chown -R "$NB_USER" "/home/${NB_USER}/work/scratch"
+    echo "Chainging owner ship of state directory /home/${NB_USER}/work/workspace"
+    chown -R "$NB_USER" "/home/${NB_USER}/work/workspace"
     echo "Chainging owner ship of state directory ${DY_SIDECAR_PATH_INPUTS}"
     chown -R "$NB_USER" "${DY_SIDECAR_PATH_INPUTS}"
     echo "Chainging owner ship of state directory ${DY_SIDECAR_PATH_OUTPUTS}"

@@ -17,4 +17,4 @@ paths-mapping:
   inputs_path: /home/jovyan/work/inputs
   outputs_path: /home/jovyan/work/outputs
   state_paths:
-    - /home/jovyan/work/scratch
+    - /home/jovyan/work/workspace

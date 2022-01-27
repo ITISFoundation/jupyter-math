@@ -9,7 +9,7 @@ description:
 
   "
 key: simcore/services/dynamic/jupyter-math
-version: 2.0.1
+version: 2.0.2
 integration-version: 1.0.0
 type: dynamic
 authors:
@@ -80,8 +80,8 @@ boot-options:
     default: "0"
     items:
       "0":
-        label: Non Voila
-        description: Tooltip for non Voila boot mode
+        label: JupyterLab
+        description: Display the JupyterLab interface the default boot mode
       "1":
         label: Voila
         description:

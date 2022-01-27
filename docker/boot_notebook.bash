@@ -60,7 +60,7 @@ source .venv/bin/activate
 #   In the future, we should have a option in the dashboard to configure how jsmash should be
 #   initiated (only for the owner of the coresponding study)
 #
-VOILA_NOTEBOOK="${NOTEBOOK_BASE_DIR}"/scratch/voila.ipynb
+VOILA_NOTEBOOK="${NOTEBOOK_BASE_DIR}"/workspace/voila.ipynb
 
 if [ "${DY_BOOT_OPTION_BOOT_MODE}" -ne 0 ]; then
     echo "$INFO" "Found DY_BOOT_OPTION_BOOT_MODE=${DY_BOOT_OPTION_BOOT_MODE}... Trying to start in voila mode"
