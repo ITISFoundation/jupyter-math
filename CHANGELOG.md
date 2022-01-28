@@ -1,5 +1,9 @@
 # Changelog
 
+## [2.0.3] - 2022-01-28
+
+- invalid notebooks will no longer cause the service to not start
+
 ## [2.0.2] - 2022-01-27
 
 - changed scratch folder to workspace
