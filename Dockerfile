@@ -81,7 +81,7 @@ RUN jupyter kernelspec remove -f python3
 WORKDIR ${HOME}
 
 RUN python3 -m venv .venv &&\
-  .venv/bin/pip --no-cache --quiet install --upgrade pip wheel setuptools &&\
+  .venv/bin/pip --no-cache --quiet install --upgrade pip~=21.3 wheel setuptools &&\
   .venv/bin/pip --no-cache --quiet install ipykernel &&\
   .venv/bin/python -m ipykernel install \
   --user \
