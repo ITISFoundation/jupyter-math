@@ -30,7 +30,7 @@ RUN apt-get update && \
   apt-get clean && rm -rf /var/lib/apt/lists/*
 
 RUN pip --no-cache --quiet install --upgrade \
-  pip \
+  pip~=21.3 \
   setuptools \
   wheel
 
