@@ -16,4 +16,5 @@ openpyxl
 # jupyter-extensions
 ipywidgets
 ipympl
-jupyter_contrib_nbextensions
+jupyterlab-lsp
+python-lsp-server[all]

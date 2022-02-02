@@ -53,6 +53,15 @@ cat > .jupyter_config.json <<EOF
 }
 EOF
 
+cat > "/opt/conda/share/jupyter/lab/overrides.json" <<EOF
+{
+     "@krassowski/jupyterlab-lsp:completion": {
+        "disableCompletionsFrom": ["Kernel"],
+        "kernelResponseTimeout": -1
+      }
+}
+EOF
+
 # shellcheck disable=SC1091
 source .venv/bin/activate
 

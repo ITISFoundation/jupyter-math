@@ -1,5 +1,8 @@
 # Changelog
 
+## [2.0.4] - 2022-02-02
+- added `jupyterlab-lsp` and `python-lsp-server[all]` to make the python coding experience more user friendly
+
 ## [2.0.3] - 2022-01-28
 
 - invalid notebooks will no longer cause the service to not start
