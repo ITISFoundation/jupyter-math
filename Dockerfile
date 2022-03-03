@@ -48,7 +48,8 @@ RUN conda install --quiet --yes \
   conda clean --all -f -y && \
   # Voila installation https://github.com/voila-dashboards/voila
   pip install --no-cache voila && \
-  jupyter serverextension enable voila --sys-prefix && \
+  jupyter serverextension enable voila && \
+  jupyter server extension enable voila && \
   # lab extensions
   # https://github.com/jupyter-widgets/ipywidgets/tree/master/packages/jupyterlab-manager
   jupyter labextension install @jupyter-widgets/jupyterlab-manager --no-build && \
