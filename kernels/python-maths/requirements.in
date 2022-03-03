@@ -1,21 +1,26 @@
 # math-base
+h5py
 matplotlib
-scipy
 numpy
 plotly
-sympy
-h5py
 scikit-learn
+scipy
+sympy
 
 pandas
 # optional extensions for pandas
+openpyxl
 xlrd
 xlwt
-openpyxl
 
 # jupyter-extensions
-ipywidgets
+ipyevents
 ipympl
+ipywidgets
+jupyterlab_latex
+jupyterlab-git
 jupyterlab-lsp
+octave_kernel
 python-lsp-server[all]
 voila
+watchdog[watchmedo]
