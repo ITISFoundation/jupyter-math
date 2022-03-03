@@ -66,6 +66,8 @@ else
     chown -R "$NB_USER" "${DY_SIDECAR_PATH_OUTPUTS}"
 fi
 
+mv "${NOTEBOOK_BASE_DIR}/README.ipynb" "${NOTEBOOK_BASE_DIR}/workspace/README.ipynb"
+
 echo "Removing write permissions from users in placed where they are not allowed to write:"
 echo "- /home/${NB_USER}/work"
 chmod gu-w "/home/${NB_USER}/work"

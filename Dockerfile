@@ -106,7 +106,7 @@ RUN MPLBACKEND=Agg .venv/bin/python -c "import matplotlib.pyplot" && \
 
 # copy README and CHANGELOG
 COPY --chown=$NB_UID:$NB_GID CHANGELOG.md ${NOTEBOOK_BASE_DIR}/CHANGELOG.md
-COPY --chown=$NB_UID:$NB_GID NOTEBOOK_README.md ${NOTEBOOK_BASE_DIR}/README.md
+COPY --chown=$NB_UID:$NB_GID README.ipynb ${NOTEBOOK_BASE_DIR}/README.ipynb
 # remove write permissions from files which are not supposed to be edited
 RUN chmod gu-w ${NOTEBOOK_BASE_DIR}/CHANGELOG.md && \
   chmod gu-w ${NOTEBOOK_BASE_DIR}/README.md && \
