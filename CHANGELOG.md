@@ -1,5 +1,14 @@
 # Changelog
 
+## [2.0.5] - 2022-03-03
+- changed default directory when opening to `~/work/workspace`
+- fixed voila preview
+- replaced readme and which is now present inside `~/work/workspace/README.ipynb`
+- updated Makefile with more commands for development
+- brought back octave kernel
+- brought back deactivated plugins
+- upgraded jupuyter-lab to v3.2.9
+
 ## [2.0.4] - 2022-02-02
 - added `jupyterlab-lsp` and `python-lsp-server[all]` to make the python coding experience more user friendly
 
