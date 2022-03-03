@@ -25,19 +25,6 @@ EOF
 #https://github.com/nteract/hydrogen/issues/922 for disable_xsrf
 cat > .jupyter_config.json <<EOF
 {
-    "NotebookApp": {
-        "ip": "0.0.0.0",
-        "port": 8888,
-        "base_url": "",
-        "extra_static_paths": ["/static"],
-        "notebook_dir": "${NOTEBOOK_BASE_DIR}",
-        "token": "${NOTEBOOK_TOKEN}",
-        "quit_button": false,
-        "open_browser": false,
-        "webbrowser_open_new": 0,
-        "disable_check_xsrf": true,
-        "nbserver_extensions": {}
-    },
     "FileCheckpoints": {
         "checkpoint_dir": "/home/jovyan/._ipynb_checkpoints/"
     },
@@ -49,6 +36,20 @@ cat > .jupyter_config.json <<EOF
     },
     "VoilaConfiguration" : {
         "enable_nbextensions" : true
+    },
+    "ServerApp": {
+        "ip": "0.0.0.0",
+        "port": 8888,
+        "base_url": "",
+        "extra_static_paths": ["/static"],
+        "notebook_dir": "${NOTEBOOK_BASE_DIR}",
+        "token": "${NOTEBOOK_TOKEN}",
+        "quit_button": false,
+        "open_browser": false,
+        "webbrowser_open_new": 0,
+        "disable_check_xsrf": true,
+        "root_dir": "${NOTEBOOK_BASE_DIR}",
+        "preferred_dir": "${NOTEBOOK_BASE_DIR}/workspace/"
     }
 }
 EOF
@@ -66,9 +67,8 @@ EOF
 source .venv/bin/activate
 
 
-#   In the future, we should have a option in the dashboard to configure how jsmash should be
+#   In the future, we should have a option in the dashboard to configure how jupyter should be
 #   initiated (only for the owner of the coresponding study)
-#
 VOILA_NOTEBOOK="${NOTEBOOK_BASE_DIR}"/workspace/voila.ipynb
 
 if [ "${DY_BOOT_OPTION_BOOT_MODE}" -ne 0 ]; then
