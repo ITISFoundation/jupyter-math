@@ -38,18 +38,18 @@ cat > .jupyter_config.json <<EOF
         "enable_nbextensions" : true
     },
     "ServerApp": {
-        "ip": "0.0.0.0",
-        "port": 8888,
         "base_url": "",
-        "extra_static_paths": ["/static"],
-        "notebook_dir": "${NOTEBOOK_BASE_DIR}",
-        "token": "${NOTEBOOK_TOKEN}",
-        "quit_button": false,
-        "open_browser": false,
-        "webbrowser_open_new": 0,
         "disable_check_xsrf": true,
+        "extra_static_paths": ["/static"],
+        "ip": "0.0.0.0",
+        "notebook_dir": "${NOTEBOOK_BASE_DIR}",
+        "open_browser": false,
+        "port": 8888,
+        "preferred_dir": "${NOTEBOOK_BASE_DIR}/workspace/",
+        "quit_button": false,
         "root_dir": "${NOTEBOOK_BASE_DIR}",
-        "preferred_dir": "${NOTEBOOK_BASE_DIR}/workspace/"
+        "token": "${NOTEBOOK_TOKEN}",
+        "webbrowser_open_new": 0
     }
 }
 EOF
