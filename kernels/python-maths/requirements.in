@@ -18,6 +18,7 @@ ipyevents
 ipympl
 ipywidgets
 jupyterlab_latex
+jupyterlab_widgets
 jupyterlab-git
 jupyterlab-lsp
 octave_kernel
