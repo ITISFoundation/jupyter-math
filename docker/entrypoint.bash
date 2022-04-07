@@ -36,7 +36,7 @@ ls -lah "${DY_SIDECAR_PATH_OUTPUTS}"
 echo "setting correct user id/group id..."
 HOST_USERID=$(stat -c %u "${DY_SIDECAR_PATH_INPUTS}")
 HOST_GROUPID=$(stat -c %g "${DY_SIDECAR_PATH_INPUTS}")
-CONT_GROUPNAME=$(getent group | grep "${HOST_GROUPID}" | cut -d: -f1 || echo "")
+CONT_GROUPNAME=$(getent group | grep "${HOST_GROUPID}" | cut --delimiter=: --fields=1 || echo "")
 echo "CONT_GROUPNAME='$CONT_GROUPNAME'"
 
 if [ "$HOST_USERID" -eq 0 ]
