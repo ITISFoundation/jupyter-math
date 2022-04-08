@@ -20,9 +20,10 @@ RUN apt-get update && \
   octave \
   gnuplot \
   ghostscript \
-  texlive-full \
-  texlive-latex-extra \
-  texinfo \
+  texlive-xetex \
+  texlive-fonts-recommended \
+  texlive-latex-recommended \
+  texlive-fonts-extra \
   zip \
   fonts-freefont-otf \
   && \
