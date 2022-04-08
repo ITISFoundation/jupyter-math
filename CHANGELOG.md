@@ -5,7 +5,7 @@
 - voila preview now works as expected
 - replaced readme and which is now present inside 
 - fixed: broken octave kernel and deactivated plugins
-- upgraded jupuyter-lab to v3.2.9
+- upgraded jupuyter-lab to v3.3.2
 
 ## [2.0.4] - 2022-02-02
 - added `jupyterlab-lsp` and `python-lsp-server[all]` to make the python coding experience more user friendly
