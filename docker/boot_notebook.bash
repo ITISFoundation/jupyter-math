@@ -21,8 +21,7 @@ define(['base/js/namespace'], function(Jupyter){
 });
 EOF
 
-#https://github.com/jupyter/notebook/issues/3130 for delete_to_trash
-#https://github.com/nteract/hydrogen/issues/922 for disable_xsrf
+# SEE https://jupyter-server.readthedocs.io/en/latest/other/full-config.html
 cat > .jupyter_config.json <<EOF
 {
     "FileCheckpoints": {
@@ -80,5 +79,5 @@ if [ "${DY_BOOT_OPTION_BOOT_MODE}" -eq 1 ] && [ -f "${VOILA_NOTEBOOK}" ]; then
     voila "${VOILA_NOTEBOOK}" --enable_nbextensions=True --port 8888 --Voila.ip="0.0.0.0" --no-browser
 else
     # call the notebook with the basic parameters
-    start-notebook.sh --config .jupyter_config.json "$@"
+    start-notebook.sh --config .jupyter_config.json "$@" --LabApp.default_url='/lab/tree/workspace/README.ipynb' 
 fi
