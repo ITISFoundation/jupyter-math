@@ -1,4 +1,4 @@
-ARG JUPYTER_MINIMAL_VERSION=lab-3.2.9@sha256:ff1ea2df902101eda3cef853b67fa559f81a8a274416b49b0c336ac98d7436bb
+ARG JUPYTER_MINIMAL_VERSION=lab-3.3.2@sha256:a4bf48221bfa864759e0f248affec3df1af0a68ee3e43dfc7435d84926ec92e8
 FROM jupyter/minimal-notebook:${JUPYTER_MINIMAL_VERSION}
 
 
@@ -11,18 +11,17 @@ ENV NOTEBOOK_BASE_DIR="$HOME/work"
 
 USER root
 
-# ffmpeg for matplotlib anim & dvipng for latex labels
 RUN apt-get update && \
   apt-get install -y --no-install-recommends \
-  # requested by numpy compiler
   gfortran \
   ffmpeg \
   dvipng \
-  # required by run.bash
   gosu \
   octave \
   gnuplot \
   ghostscript \
+  texlive-full \
+  texlive-latex-extra \
   texinfo \
   zip \
   fonts-freefont-otf \
