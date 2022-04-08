@@ -67,8 +67,6 @@ else
 fi
 
 mv "${NOTEBOOK_BASE_DIR}/README.ipynb" "${NOTEBOOK_BASE_DIR}/workspace/README.ipynb"
-chown -R "$NB_USER" "${NOTEBOOK_BASE_DIR}/workspace/README.ipynb"
-chmod gu+w "${NOTEBOOK_BASE_DIR}/workspace/README.ipynb"
 
 echo "Creating /home/${NB_USER}/.virtual_documents"
 mkdir -p "/home/${NB_USER}/.virtual_documents"
