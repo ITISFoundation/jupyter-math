@@ -5,6 +5,7 @@
 - voila preview now works as expected
 - replaced readme and which is now present inside 
 - fixed: broken octave kernel and deactivated plugins
+- fixed: broken LaTex compiler
 - upgraded jupuyter-lab to v3.3.2
 
 ## [2.0.4] - 2022-02-02
