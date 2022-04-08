@@ -68,6 +68,11 @@ fi
 
 mv "${NOTEBOOK_BASE_DIR}/README.ipynb" "${NOTEBOOK_BASE_DIR}/workspace/README.ipynb"
 
+echo "Creating /home/${NB_USER}/.virtual_documents"
+mkdir -p "/home/${NB_USER}/.virtual_documents"
+chown -R "$NB_USER" "/home/${NB_USER}/.virtual_documents"
+export JP_LSP_VIRTUAL_DIR=/home/${NB_USER}/.virtual_documents
+
 echo "Removing write permissions from users in placed where they are not allowed to write:"
 echo "- /home/${NB_USER}/work"
 chmod gu-w "/home/${NB_USER}/work"
