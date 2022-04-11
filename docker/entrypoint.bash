@@ -56,22 +56,17 @@ else
     fi
 
     echo "adding $NB_USER to group $CONTAINER_GROUPNAME..."
-    usermod -a -G "$CONTAINER_GROUPNAME" "$NB_USER" 
+    usermod --append --groups "$CONTAINER_GROUPNAME" "$NB_USER" 
     
     echo "Chainging owner ship of state directory /home/${NB_USER}/work/workspace"
-    chown -R "$NB_USER" "/home/${NB_USER}/work/workspace"
+    chown --recursive "$NB_USER" "/home/${NB_USER}/work/workspace"
     echo "Chainging owner ship of state directory ${DY_SIDECAR_PATH_INPUTS}"
-    chown -R "$NB_USER" "${DY_SIDECAR_PATH_INPUTS}"
+    chown --recursive "$NB_USER" "${DY_SIDECAR_PATH_INPUTS}"
     echo "Chainging owner ship of state directory ${DY_SIDECAR_PATH_OUTPUTS}"
-    chown -R "$NB_USER" "${DY_SIDECAR_PATH_OUTPUTS}"
+    chown --recursive "$NB_USER" "${DY_SIDECAR_PATH_OUTPUTS}"
 fi
 
 mv "${NOTEBOOK_BASE_DIR}/README.ipynb" "${NOTEBOOK_BASE_DIR}/workspace/README.ipynb"
-
-echo "Creating /home/${NB_USER}/.virtual_documents"
-mkdir -p "/home/${NB_USER}/.virtual_documents"
-chown -R "$NB_USER" "/home/${NB_USER}/.virtual_documents"
-export JP_LSP_VIRTUAL_DIR=/home/${NB_USER}/.virtual_documents
 
 echo "Removing write permissions from users in placed where they are not allowed to write:"
 echo "- /home/${NB_USER}/work"

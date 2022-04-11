@@ -80,6 +80,10 @@ COPY --chown=$NB_UID:$NB_GID README.ipynb ${NOTEBOOK_BASE_DIR}/README.ipynb
 RUN chmod gu-w ${NOTEBOOK_BASE_DIR}/CHANGELOG.md && \
   chmod gu-w ${NOTEBOOK_BASE_DIR}/requirements.txt
 
+RUN mkdir --parents "/home/${NB_USER}/.virtual_documents" && \
+  chown --recursive "$NB_USER" "/home/${NB_USER}/.virtual_documents"
+ENV JP_LSP_VIRTUAL_DIR="/home/${NB_USER}/.virtual_documents"
+
 # Copying boot scripts
 COPY --chown=$NB_UID:$NB_GID docker /docker
 
