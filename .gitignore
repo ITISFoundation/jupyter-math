@@ -52,3 +52,5 @@ docker-compose.yml
 
 # ignore all files in validation
 validation/
+
+*.ignore.*
