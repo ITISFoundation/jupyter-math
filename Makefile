@@ -18,4 +18,4 @@ build:
 
 .PHONY: run-local
 run-local:
-	docker-compose -f docker-compose-local.yml up
+	docker-compose --file docker-compose-local.yml up
