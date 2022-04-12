@@ -36,36 +36,37 @@ ls -lah "${DY_SIDECAR_PATH_OUTPUTS}"
 echo "setting correct user id/group id..."
 HOST_USERID=$(stat -c %u "${DY_SIDECAR_PATH_INPUTS}")
 HOST_GROUPID=$(stat -c %g "${DY_SIDECAR_PATH_INPUTS}")
-# since below command hangs we disbale it and set the group to none to create it
-#CONT_GROUPNAME=$(getent group "${HOST_GROUPID}" | cut -d: -f1)
-CONT_GROUPNAME=""
+CONTAINER_GROUPNAME=$(getent group | grep "${HOST_GROUPID}" | cut --delimiter=: --fields=1 || echo "")
+echo "CONTAINER_GROUPNAME='$CONTAINER_GROUPNAME'"
 
 if [ "$HOST_USERID" -eq 0 ]
 then
     echo "Warning: Folder mounted owned by root user... adding $NB_USER to root..."
     addgroup "$NB_USER" root
 else
-    echo "Folder mounted owned by user $HOST_USERID:$HOST_GROUPID-'$CONT_GROUPNAME'..."
+    echo "Folder mounted owned by user $HOST_USERID:$HOST_GROUPID-'$CONTAINER_GROUPNAME'..."
     # take host's credentials in $NB_USER
-    if [ -z "$CONT_GROUPNAME" ]
+    if [ -z "$CONTAINER_GROUPNAME" ]
     then
         echo "Creating new group my$NB_USER"
-        CONT_GROUPNAME=my$NB_USER
-        addgroup --gid "$HOST_GROUPID" "$CONT_GROUPNAME"
+        CONTAINER_GROUPNAME=my$NB_USER
+        addgroup --gid "$HOST_GROUPID" "$CONTAINER_GROUPNAME"
     else
         echo "group already exists"
     fi
 
-    echo "adding $NB_USER to group $CONT_GROUPNAME..."
-    usermod -a -G "$CONT_GROUPNAME" "$NB_USER" 
+    echo "adding $NB_USER to group $CONTAINER_GROUPNAME..."
+    usermod --append --groups "$CONTAINER_GROUPNAME" "$NB_USER" 
     
     echo "Chainging owner ship of state directory /home/${NB_USER}/work/workspace"
-    chown -R "$NB_USER" "/home/${NB_USER}/work/workspace"
+    chown --recursive "$NB_USER" "/home/${NB_USER}/work/workspace"
     echo "Chainging owner ship of state directory ${DY_SIDECAR_PATH_INPUTS}"
-    chown -R "$NB_USER" "${DY_SIDECAR_PATH_INPUTS}"
+    chown --recursive "$NB_USER" "${DY_SIDECAR_PATH_INPUTS}"
     echo "Chainging owner ship of state directory ${DY_SIDECAR_PATH_OUTPUTS}"
-    chown -R "$NB_USER" "${DY_SIDECAR_PATH_OUTPUTS}"
+    chown --recursive "$NB_USER" "${DY_SIDECAR_PATH_OUTPUTS}"
 fi
+
+mv "${NOTEBOOK_BASE_DIR}/README.ipynb" "${NOTEBOOK_BASE_DIR}/workspace/README.ipynb"
 
 echo "Removing write permissions from users in placed where they are not allowed to write:"
 echo "- /home/${NB_USER}/work"

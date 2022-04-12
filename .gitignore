@@ -49,3 +49,8 @@ tmp/
 
 # not interested in storing this file
 docker-compose.yml
+
+# ignore all files in validation
+validation/
+
+*.ignore.*
