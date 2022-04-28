@@ -19,3 +19,9 @@ build:
 .PHONY: run-local
 run-local:
 	docker-compose --file docker-compose-local.yml up
+
+.PHONY: compose-spec
+compose-spec: ## runs ooil to assemble the docker-compose.yml file
+	@docker run -it --rm -v $(PWD):/jupyter-math \
+		itisfoundation/ci-service-integration-library:v1.0.1-dev-24 \
+		sh -c "cd /jupyter-math && ooil compose"
