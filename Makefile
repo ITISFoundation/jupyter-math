@@ -17,6 +17,7 @@ endef
 
 .PHONY: version-patch version-minor version-major
 version-patch version-minor version-major: .bumpversion.cfg ## increases service's version
+	@make compose-spec
 	@$(call _bumpversion,$<,version-)
 	@make compose-spec
 
@@ -28,7 +29,7 @@ compose-spec: ## runs ooil to assemble the docker-compose.yml file
 		sh -c "cd /${DOCKER_IMAGE_NAME} && ooil compose"
 
 .PHONY: build
-build:	## build docker image
+build: compose-spec	## build docker image
 	docker-compose build
 
 .PHONY: run-local
