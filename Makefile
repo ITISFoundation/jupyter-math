@@ -15,9 +15,9 @@ define _bumpversion
 		sh -c "cd /${DOCKER_IMAGE_NAME} && bump2version --verbose --list --config-file $(1) $(subst $(2),,$@)"
 endef
 
-.PHONY: version-service-patch version-service-minor version-service-major
+.PHONY: version-patch version-minor version-major
 version-patch version-minor version-major: .bumpversion.cfg ## increases service's version
-	@$(call _bumpversion,$<,version-service-)
+	@$(call _bumpversion,$<,version-)
 	@make compose-spec
 
 .PHONY: compose-spec
