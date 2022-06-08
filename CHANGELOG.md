@@ -1,5 +1,10 @@
 # Changelog
 
+## [2.0.6] - 2022-05-08
+- shell and kernel now use the same python interpreter
+- fixes issue crashing when trusting notebooks
+- fixes issue crashing when copying README.ipynb
+
 ## [2.0.5] - 2022-03-03
 - `~/work/workspace` is now the default working directory containing `~/work/workspace/README.ipynb`
 - voila preview now works as expected

@@ -87,7 +87,7 @@ ENV JP_LSP_VIRTUAL_DIR="/home/${NB_USER}/.virtual_documents"
 # Copying boot scripts
 COPY --chown=$NB_UID:$NB_GID docker /docker
 
-ENV PYTHONPATH="/src:$PYTHONPATH"
+RUN echo 'export PATH="/home/${NB_USER}/.venv/bin:$PATH"' >> "/home/${NB_USER}/.bashrc"
 
 EXPOSE 8888
 
