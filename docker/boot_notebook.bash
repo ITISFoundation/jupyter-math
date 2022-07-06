@@ -28,7 +28,8 @@ cat > .jupyter_config.json <<EOF
         "checkpoint_dir": "/home/jovyan/._ipynb_checkpoints/"
     },
     "KernelSpecManager": {
-        "ensure_native_kernel": false
+        "ensure_native_kernel": false,
+        "whitelist": ["python-maths", "octave"]
     },
     "Session": {
         "debug": false
