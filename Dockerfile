@@ -43,9 +43,6 @@ ENV HOME="/home/$NB_USER"
 
 USER root
 
-# NOTE: do not forget c.KernelSpecManager.ensure_native_kernel = False as well
-RUN jupyter kernelspec remove -f python3
-
 WORKDIR ${HOME}
 
 RUN python3 -m venv .venv &&\
@@ -56,7 +53,8 @@ RUN python3 -m venv .venv &&\
   --name "python-maths" \
   --display-name "python (maths)" \
   && \
-  jupyter kernelspec list
+  echo y | .venv/bin/python -m jupyter kernelspec uninstall python3 &&\
+  .venv/bin/python -m jupyter kernelspec list
 
 # copy and resolve dependecies to be up to date
 COPY --chown=$NB_UID:$NB_GID kernels/python-maths/requirements.in ${NOTEBOOK_BASE_DIR}/requirements.in
@@ -87,7 +85,7 @@ ENV JP_LSP_VIRTUAL_DIR="/home/${NB_USER}/.virtual_documents"
 # Copying boot scripts
 COPY --chown=$NB_UID:$NB_GID docker /docker
 
-ENV PYTHONPATH="/src:$PYTHONPATH"
+RUN echo 'export PATH="/home/${NB_USER}/.venv/bin:$PATH"' >> "/home/${NB_USER}/.bashrc"
 
 EXPOSE 8888
 

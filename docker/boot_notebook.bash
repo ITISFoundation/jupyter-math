@@ -10,7 +10,7 @@ echo "$INFO" "  Workdir :$(pwd)"
 
 # Trust all notebooks in the notebooks folder
 echo "$INFO" "trust all notebooks in path..."
-find "${NOTEBOOK_BASE_DIR}" -name '*.ipynb' -type f | xargs -I % /bin/bash -c 'jupyter trust % || true'
+find "${NOTEBOOK_BASE_DIR}" -name '*.ipynb' -type f | xargs -I % /bin/bash -c 'jupyter trust "%" || true' || true
 
 # Configure
 # Prevents notebook to open in separate tab
@@ -28,7 +28,8 @@ cat > .jupyter_config.json <<EOF
         "checkpoint_dir": "/home/jovyan/._ipynb_checkpoints/"
     },
     "KernelSpecManager": {
-        "ensure_native_kernel": false
+        "ensure_native_kernel": false,
+        "whitelist": ["python-maths", "octave"]
     },
     "Session": {
         "debug": false
