@@ -19,6 +19,7 @@ RUN apt-get update && \
   gosu \
   octave \
   gnuplot \
+  bc \
   ghostscript \
   texlive-xetex \
   texlive-fonts-recommended \
