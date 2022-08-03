@@ -15,10 +15,12 @@ RUN apt-get update && \
   apt-get install -y --no-install-recommends \
   gfortran \
   ffmpeg \
+  make \
   dvipng \
   gosu \
   octave \
   gnuplot \
+  liboctave-dev \
   bc \
   ghostscript \
   texlive-xetex \
@@ -28,7 +30,11 @@ RUN apt-get update && \
   zip \
   fonts-freefont-otf \
   && \
-  apt-get clean && rm -rf /var/lib/apt/lists/*
+  apt-get clean && rm -rf /var/lib/apt/lists/* 
+
+RUN octave --no-window-system --eval "pkg install -forge io" && \
+  octave --no-window-system --eval "pkg install -forge statistics" && \
+  octave --no-window-system --eval "pkg install -forge image"    
 
 RUN pip --no-cache --quiet install --upgrade \
   pip \
