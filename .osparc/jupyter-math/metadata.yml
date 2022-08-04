@@ -9,7 +9,7 @@ description:
 
   "
 key: simcore/services/dynamic/jupyter-math
-version: 2.0.7
+version: 2.0.8
 integration-version: 2.0.0
 type: dynamic
 authors:
