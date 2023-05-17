@@ -87,3 +87,4 @@ boot-options:
         description:
           To start as Voila save a notebook as "voila.ipynb" in the root
           folder
+min-visible-inputs: 2
