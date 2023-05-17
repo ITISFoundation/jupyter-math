@@ -18,7 +18,7 @@ RUN apt-get update && \
   make \
   dvipng \
   gosu \
-  octave \
+  octave=5.2.0-1 \
   gnuplot \
   liboctave-dev \
   bc \
@@ -32,9 +32,9 @@ RUN apt-get update && \
   && \
   apt-get clean && rm -rf /var/lib/apt/lists/* 
 
-RUN octave --no-window-system --eval "pkg install -forge io" && \
-  octave --no-window-system --eval "pkg install -forge statistics" && \
-  octave --no-window-system --eval "pkg install -forge image"    
+RUN octave --no-window-system --eval 'pkg install "https://downloads.sourceforge.net/project/octave/Octave%20Forge%20Packages/Individual%20Package%20Releases/io-2.6.4.tar.gz"' && \
+  octave --no-window-system --eval 'pkg install "https://downloads.sourceforge.net/project/octave/Octave%20Forge%20Packages/Individual%20Package%20Releases/statistics-1.4.3.tar.gz"' && \
+  octave --no-window-system --eval 'pkg install "https://downloads.sourceforge.net/project/octave/Octave%20Forge%20Packages/Individual%20Package%20Releases/image-2.14.0.tar.gz"'    
 
 RUN pip --no-cache --quiet install --upgrade \
   pip \
