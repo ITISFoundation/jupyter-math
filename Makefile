@@ -7,6 +7,30 @@ export DOCKER_IMAGE_NAME ?= jupyter-math
 export DOCKER_IMAGE_TAG ?= 2.0.9
 
 
+# PYTHON ENVIRON ---------------------------------------------------------------------------------------
+.PHONY: devenv
+.venv:
+	@python3 --version
+	python3 -m venv $@
+	# upgrading package managers
+	$@/bin/pip install --upgrade \
+		pip \
+		wheel \
+		setuptools
+
+devenv: .venv  ## create a python virtual environment with tools to dev, run and tests cookie-cutter
+	# installing extra tools
+	@$</bin/pip3 install pip-tools
+	# your dev environment contains
+	@$</bin/pip3 list
+	@echo "To activate the virtual environment, run 'source $</bin/activate'"
+
+# Upgrades and tracks python packages versions installed in the service ---------------------------------
+kernels/python-maths/requirements.txt: devenv
+	# freezes requirements
+	pip-compile kernels/python-maths/requirements.in --resolver=backtracking --output-file kernels/python-maths/requirements.txt
+
+# Builds new service version ----------------------------------------------------------------------------
 define _bumpversion
 	# upgrades as $(subst $(1),,$@) version, commits and tags
 	@docker run -it --rm -v $(PWD):/${DOCKER_IMAGE_NAME} \
@@ -28,10 +52,10 @@ compose-spec: ## runs ooil to assemble the docker-compose.yml file
 		itisfoundation/ci-service-integration-library:v1.0.1-dev-43 \
 		sh -c "cd /${DOCKER_IMAGE_NAME} && ooil compose"
 
-.PHONY: build
-build: compose-spec	## build docker image
+build: | kernels/python-maths/requirements.txt compose-spec	## build docker image
 	docker-compose build
 
+# To test built service locally -------------------------------------------------------------------------
 .PHONY: run-local
 run-local:	## runs image with local configuration
 	docker-compose --file docker-compose-local.yml up
