@@ -165,9 +165,7 @@ jupyter-core==5.3.0
 jupyter-events==0.6.3
     # via jupyter-server-fileid
 jupyter-lsp==2.1.0
-    # via
-    #   jupyterlab
-    #   jupyterlab-lsp
+    # via jupyterlab-lsp
 jupyter-server==1.24.0
     # via
     #   jupyter-lsp
@@ -273,9 +271,7 @@ notebook==6.5.4
     #   jupyterlab
     #   jupyterlab-latex
 notebook-shim==0.2.3
-    # via
-    #   jupyterlab
-    #   nbclassic
+    # via nbclassic
 numpy==1.24.3
     # via
     #   -r kernels/python-maths/requirements.in
@@ -486,9 +482,7 @@ traitlets==5.9.0
     #   notebook
     #   voila
 typing-extensions==4.6.2
-    # via
-    #   astroid
-    #   async-lru
+    # via astroid
 tzdata==2023.3
     # via pandas
 ujson==5.7.0

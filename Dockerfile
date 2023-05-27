@@ -74,7 +74,7 @@ RUN jupyter serverextension enable voila && \
 # Import matplotlib the first time to build the font cache.
 ENV XDG_CACHE_HOME /home/$NB_USER/.cache/
 RUN MPLBACKEND=Agg .venv/bin/python -c "import matplotlib.pyplot" && \
-  # run fix permissions only once
+  # run fix permissions only once. This can be probably optimized, so it is faster to build
   fix-permissions /home/$NB_USER
 
 # copy README and CHANGELOG
