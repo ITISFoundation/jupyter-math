@@ -52,7 +52,7 @@ compose-spec: ## runs ooil to assemble the docker-compose.yml file
 		itisfoundation/ci-service-integration-library:v1.0.1-dev-43 \
 		sh -c "cd /${DOCKER_IMAGE_NAME} && ooil compose"
 
-build: | kernels/python-maths/requirements.txt compose-spec	## build docker image
+build: | compose-spec	## build docker image
 	docker-compose build
 
 # To test built service locally -------------------------------------------------------------------------

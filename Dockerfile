@@ -52,8 +52,6 @@ USER root
 
 WORKDIR ${HOME}
 
-RUN fix-permissions /home/$NB_USER
-
 RUN python3 -m venv .venv &&\
   .venv/bin/pip --no-cache --quiet install --upgrade pip~=21.3 wheel setuptools &&\
   .venv/bin/pip --no-cache --quiet install ipykernel &&\
@@ -75,7 +73,8 @@ RUN jupyter serverextension enable voila && \
 
 # Import matplotlib the first time to build the font cache.
 ENV XDG_CACHE_HOME /home/$NB_USER/.cache/
-RUN MPLBACKEND=Agg .venv/bin/python -c "import matplotlib.pyplot" 
+RUN MPLBACKEND=Agg .venv/bin/python -c "import matplotlib.pyplot" && \
+fix-permissions /home/$NB_USER
   # run fix permissions only once. This can be probably optimized, so it is faster to build
 
 # copy README and CHANGELOG
