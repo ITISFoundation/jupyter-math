@@ -23,7 +23,6 @@ authors:
     email: reboux@zmt.swiss
     affiliation: Zurich MedTech
 contact: crespo@itis.swiss
-min-visible-inputs: 4
 inputs:
   input_1:
     displayOrder: 1.0
@@ -200,3 +199,4 @@ boot-options:
         description:
           To start as Voila save a notebook as "voila.ipynb" in the root
           folder
+min-visible-inputs: 4
