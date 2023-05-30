@@ -26,7 +26,7 @@ devenv: .venv  ## create a python virtual environment with tools to dev, run and
 	@echo "To activate the virtual environment, run 'source $</bin/activate'"
 
 # Upgrades and tracks python packages versions installed in the service ---------------------------------
-kernels/python-maths/requirements.txt: devenv
+requirements: devenv ## runs pip-tools to build requirements.txt that will be installed in the JupyterLab
 	# freezes requirements
 	pip-compile kernels/python-maths/requirements.in --resolver=backtracking --output-file kernels/python-maths/requirements.txt
 
