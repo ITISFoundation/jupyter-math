@@ -9,7 +9,7 @@ description:
 
   "
 key: simcore/services/dynamic/jupyter-math
-version: 2.0.8
+version: 2.0.9
 integration-version: 2.0.0
 type: dynamic
 authors:
@@ -52,6 +52,118 @@ inputs:
       Any input files. One or several files compressed in a zip will be
       downloaded in an inputs folder.
     type: data:*/*
+  input_5:
+    displayOrder: 5.0
+    label: input_files_5
+    description:
+      Any input files. One or several files compressed in a zip will be
+      downloaded in an inputs folder.
+    type: data:*/*
+  input_6:
+    displayOrder: 6.0
+    label: input_files_6
+    description:
+      Any input files. One or several files compressed in a zip will be
+      downloaded in an inputs folder.
+    type: data:*/*
+  input_7:
+    displayOrder: 7.0
+    label: input_files_7
+    description:
+      Any input files. One or several files compressed in a zip will be
+      downloaded in an inputs folder.
+    type: data:*/*
+  input_8:
+    displayOrder: 8.0
+    label: input_files_8
+    description:
+      Any input files. One or several files compressed in a zip will be
+      downloaded in an inputs folder.
+    type: data:*/*
+  input_9:
+    displayOrder: 9.0
+    label: input_files_9
+    description:
+      Any input files. One or several files compressed in a zip will be
+      downloaded in an inputs folder.
+    type: data:*/*
+  input_10:
+    displayOrder: 10.0
+    label: input_files_10
+    description:
+      Any input files. One or several files compressed in a zip will be
+      downloaded in an inputs folder.
+    type: data:*/*
+  input_11:
+    displayOrder: 11.0
+    label: input_files_11
+    description:
+      Any input files. One or several files compressed in a zip will be
+      downloaded in an inputs folder.
+    type: data:*/*
+  input_12:
+    displayOrder: 12.0
+    label: input_files_12
+    description:
+      Any input files. One or several files compressed in a zip will be
+      downloaded in an inputs folder.
+    type: data:*/*
+  input_13:
+    displayOrder: 13.0
+    label: input_files_13
+    description:
+      Any input files. One or several files compressed in a zip will be
+      downloaded in an inputs folder.
+    type: data:*/*
+  input_14:
+    displayOrder: 14.0
+    label: input_files_14
+    description:
+      Any input files. One or several files compressed in a zip will be
+      downloaded in an inputs folder.
+    type: data:*/*
+  input_15:
+    displayOrder: 15.0
+    label: input_files_15
+    description:
+      Any input files. One or several files compressed in a zip will be
+      downloaded in an inputs folder.
+    type: data:*/*
+  input_16:
+    displayOrder: 16.0
+    label: input_files_16
+    description:
+      Any input files. One or several files compressed in a zip will be
+      downloaded in an inputs folder.
+    type: data:*/*
+  input_17:
+    displayOrder: 17.0
+    label: input_files_17
+    description:
+      Any input files. One or several files compressed in a zip will be
+      downloaded in an inputs folder.
+    type: data:*/*
+  input_18:
+    displayOrder: 18.0
+    label: input_files_18
+    description:
+      Any input files. One or several files compressed in a zip will be
+      downloaded in an inputs folder.
+    type: data:*/*
+  input_19:
+    displayOrder: 19.0
+    label: input_files_19
+    description:
+      Any input files. One or several files compressed in a zip will be
+      downloaded in an inputs folder.
+    type: data:*/*
+  input_20:
+    displayOrder: 20.0
+    label: input_files_20
+    description:
+      Any input files. One or several files compressed in a zip will be
+      downloaded in an inputs folder.
+    type: data:*/*
 outputs:
   output_1:
     displayOrder: 1.0
@@ -87,3 +199,4 @@ boot-options:
         description:
           To start as Voila save a notebook as "voila.ipynb" in the root
           folder
+min-visible-inputs: 4

@@ -64,19 +64,18 @@ RUN python3 -m venv .venv &&\
   .venv/bin/python -m jupyter kernelspec list
 
 # copy and resolve dependecies to be up to date
-COPY --chown=$NB_UID:$NB_GID kernels/python-maths/requirements.in ${NOTEBOOK_BASE_DIR}/requirements.in
+COPY --chown=$NB_UID:$NB_GID kernels/python-maths/requirements.txt ${NOTEBOOK_BASE_DIR}/requirements.txt
 RUN .venv/bin/pip --no-cache install pip-tools && \
-  .venv/bin/pip-compile --build-isolation --output-file ${NOTEBOOK_BASE_DIR}/requirements.txt ${NOTEBOOK_BASE_DIR}/requirements.in  && \
-  .venv/bin/pip --no-cache install -r ${NOTEBOOK_BASE_DIR}/requirements.txt && \
-  rm ${NOTEBOOK_BASE_DIR}/requirements.in
+  .venv/bin/pip --no-cache install -r ${NOTEBOOK_BASE_DIR}/requirements.txt
+
 RUN jupyter serverextension enable voila && \
   jupyter server extension enable voila
 
 # Import matplotlib the first time to build the font cache.
 ENV XDG_CACHE_HOME /home/$NB_USER/.cache/
 RUN MPLBACKEND=Agg .venv/bin/python -c "import matplotlib.pyplot" && \
-  # run fix permissions only once
-  fix-permissions /home/$NB_USER
+fix-permissions /home/$NB_USER
+  # run fix permissions only once. This can be probably optimized, so it is faster to build
 
 # copy README and CHANGELOG
 COPY --chown=$NB_UID:$NB_GID CHANGELOG.md ${NOTEBOOK_BASE_DIR}/CHANGELOG.md
