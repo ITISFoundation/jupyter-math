@@ -30,4 +30,4 @@ make publish-local
 ```
 
 ### Testing manually
-After a new service version has been published on the master deployment, it can be manually tested. For example a Templated, called "Test Jupyter-math 2.0.9 ipywidgets" can be used for internal testing on the master d.eployment
+After a new service version has been published on the master deployment, it can be manually tested. For example a Template, called "Test Jupyter-math 2.0.9 ipywidgets" can be used for internal testing on the master deployment.
