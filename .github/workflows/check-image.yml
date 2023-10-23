@@ -12,11 +12,11 @@ jobs:
         uses: docker://itisfoundation/ci-service-integration-library:v1.0.3-dev-8
         with:
           args: ooil --version
-      - name: Assemble docker-compose spec
+      - name: Assemble docker compose spec
         uses: docker://itisfoundation/ci-service-integration-library:v1.0.3-dev-8
         with:
           args: ooil compose
       - name: Build all images if multiple
         uses: docker://itisfoundation/ci-service-integration-library:v1.0.3-dev-8
         with:
-          args: docker-compose build
+          args: docker compose build
