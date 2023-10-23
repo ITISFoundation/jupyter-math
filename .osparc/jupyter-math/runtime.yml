@@ -18,3 +18,8 @@ paths-mapping:
   outputs_path: /home/jovyan/work/outputs
   state_paths:
     - /home/jovyan/work/workspace
+callbacks-mapping:
+  inactivity:
+    service: container
+    command: "/path/to/your/inactivity/hook"
+    timeout: 1

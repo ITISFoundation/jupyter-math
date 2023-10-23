@@ -74,4 +74,5 @@ chmod gu-w "/home/${NB_USER}/work"
 
 echo
 echo "$INFO" "Starting notebook ..."
+exec gosu "$NB_USER" /docker/kernel_cehcker.py &
 exec gosu "$NB_USER" /docker/boot_notebook.bash
