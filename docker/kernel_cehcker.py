@@ -18,7 +18,7 @@ class JupyterKernelChecker:
     HEADERS = {"accept": "application/json"}
 
     def __init__(self) -> None:
-        self.last_busy: datetime| None  = None
+        self.last_idle: datetime| None  = None
     
     def _get(self, path: str) -> dict:
         r = requests.get(f'{self.BASE_URL}{path}', headers=self.HEADERS)
@@ -40,20 +40,19 @@ class JupyterKernelChecker:
     
     def check(self):
         are_kernels_busy = self._are_kernels_busy()
-        print(f"{are_kernels_busy=}")
         
-        if not are_kernels_busy:
-            self.last_busy = None
+        if are_kernels_busy:
+            self.last_idle = None
 
-        if are_kernels_busy and self.last_busy is None:
-            self.last_busy = datetime.utcnow()
+        if not are_kernels_busy and self.last_idle is None:
+            self.last_idle = datetime.utcnow()
 
     
     def get_idle_seconds(self)-> float:
-        if self.last_busy is None:
+        if self.last_idle is None:
             return 0
 
-        return (datetime.utcnow() - self.last_busy).total_seconds()
+        return (datetime.utcnow() - self.last_idle).total_seconds()
     
     async def run(self):
         while True:
