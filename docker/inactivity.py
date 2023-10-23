@@ -1,4 +1,3 @@
-
 #!/home/jovyan/.venv/bin/python
 
 # prints the result of the inactivity command
