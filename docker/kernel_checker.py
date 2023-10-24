@@ -12,7 +12,6 @@ from typing import Final
 
 KERNEL_BUSY_CHECK_INTERVAL_S: Final[float] = 5
 
-
 class JupyterKernelChecker:
     BASE_URL = "http://localhost:8888"
     HEADERS = {"accept": "application/json"}
@@ -79,7 +78,7 @@ def make_app()-> tornado.web.Application:
 
 async def main():
     app = make_app()
-    app.listen(9000)
+    app.listen(19597)
     asyncio.create_task(kernel_checker.run())
     await asyncio.Event().wait()
 
