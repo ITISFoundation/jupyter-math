@@ -69,9 +69,7 @@ class MainHandler(tornado.web.RequestHandler):
     def get(self):
         idle_seconds = kernel_checker.get_idle_seconds()
         response = (
-            {"is_inactive": True, "seconds_inactive" : idle_seconds} 
-            if idle_seconds > 0 else 
-            {"is_inactive": False, "seconds_inactive" : None}
+            {"seconds_inactive" : idle_seconds if idle_seconds > 0 else None} 
         )
         self.write(json.dumps(response))
 
