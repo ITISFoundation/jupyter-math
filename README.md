@@ -31,3 +31,7 @@ make publish-local
 
 ### Testing manually
 After a new service version has been published on the master deployment, it can be manually tested. For example a Template, called "Test Jupyter-math 2.0.9 ipywidgets" can be used for internal testing on the master deployment.
+
+
+### Changelog
+v2.0.10 (2023-12-11): add openBLAS for faster Octave solution 

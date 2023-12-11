@@ -19,4 +19,4 @@ jobs:
       - name: Build all images if multiple
         uses: docker://itisfoundation/ci-service-integration-library:v1.0.3-dev-4
         with:
-          args: docker-compose build
+          args: docker compose build

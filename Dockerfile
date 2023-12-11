@@ -13,6 +13,7 @@ USER root
 
 RUN apt-get update && \
   apt-get install -y --no-install-recommends \
+  libopenblas-base \
   gfortran \
   ffmpeg \
   make \

@@ -4,7 +4,7 @@ SHELL = /bin/sh
 .DEFAULT_GOAL := help
 
 export DOCKER_IMAGE_NAME ?= jupyter-math
-export DOCKER_IMAGE_TAG ?= 2.0.9
+export DOCKER_IMAGE_TAG ?= 2.0.10
 
 
 # PYTHON ENVIRON ---------------------------------------------------------------------------------------
@@ -53,12 +53,12 @@ compose-spec: ## runs ooil to assemble the docker-compose.yml file
 		sh -c "cd /${DOCKER_IMAGE_NAME} && ooil compose"
 
 build: | compose-spec	## build docker image
-	docker-compose build
+	docker compose build
 
 # To test built service locally -------------------------------------------------------------------------
 .PHONY: run-local
 run-local:	## runs image with local configuration
-	docker-compose --file docker-compose-local.yml up
+	docker compose --file docker-compose-local.yml up
 
 .PHONY: publish-local
 publish-local: ## push to local throw away registry to test integration
