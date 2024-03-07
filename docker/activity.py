@@ -1,6 +1,6 @@
 #!/home/jovyan/.venv/bin/python
 
-# prints the result of the inactivity command
+# prints the result of the activity command
 
 import requests
 

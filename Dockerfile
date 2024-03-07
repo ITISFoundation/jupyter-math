@@ -91,7 +91,7 @@ ENV JP_LSP_VIRTUAL_DIR="/home/${NB_USER}/.virtual_documents"
 # Copying boot scripts
 COPY --chown=$NB_UID:$NB_GID docker /docker
 
-RUN chmod +x /docker/inactivity.py \
+RUN chmod +x /docker/activity.py \
   && chmod +x /docker/kernel_checker.py
 
 RUN echo 'export PATH="/home/${NB_USER}/.venv/bin:$PATH"' >> "/home/${NB_USER}/.bashrc"
