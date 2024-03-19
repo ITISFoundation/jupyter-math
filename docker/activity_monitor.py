@@ -1,24 +1,19 @@
 #!/home/jovyan/.venv/bin/python
 
 
-# How does this work?
-# 1. controls that the service is not busy at regular intervals
-# 2a. cheks if kernels are busy
-# 2b. checks total CPU usage of all children processes is >= THRESHOLD_CPU_USAGE
-# 3. if either of the above checks if True the service will result as busy
-
-
 import asyncio
 import json
 import psutil
 import requests
 import tornado
-import subprocess
+import time
 
+from threading import Thread
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from contextlib import suppress
 from datetime import datetime
 from typing import Final
+from abc import abstractmethod
 
 
 CHECK_INTERVAL_S: Final[float] = 5
@@ -26,15 +21,86 @@ CPU_USAGE_MONITORING_INTERVAL_S: Final[float] = 1
 THRESHOLD_CPU_USAGE: Final[float] = 5  # percent in range [0, 100]
 
 
-class JupyterKernelMonitor:
+# Utilities
+class AbstractIsBusyMonitor:
+    def __init__(self, poll_interval: float) -> None:
+        self._poll_interval: float = poll_interval
+        self._keep_running: bool = True
+        self._thread: Thread | None = None
+
+        self.is_busy: bool = True
+
+    @abstractmethod
+    def _check_if_busy(self) -> bool:
+        """Must be user defined and returns if current
+        metric is to be considered busy
+
+        Returns:
+            bool: True if considered busy
+        """
+
+    def _worker(self) -> None:
+        while self._keep_running:
+            self.is_busy = self._check_if_busy()
+            time.sleep(self._poll_interval)
+
+    def start(self) -> None:
+        self._thread = Thread(target=self._worker, daemon=True)
+        self._thread.start()
+
+    def stop(self) -> None:
+        self._keep_running = False
+        if self._thread:
+            self._thread.join()
+
+    def __enter__(self):
+        self.start()
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        self.stop()
+
+
+def __get_children_processes(pid) -> list[psutil.Process]:
+    try:
+        return psutil.Process(pid).children(recursive=True)
+    except psutil.NoSuchProcess:
+        return []
+
+
+def _get_brother_processes() -> list[psutil.Process]:
+    # Returns the CPU usage of all processes except this one.
+    # ASSUMPTIONS:
+    # - `CURRENT_PROC` is a child of root process
+    # - `CURRENT_PROC` does not create any child processes
+    #
+    # It looks for its brothers (and their children) p1 to pN in order
+    # to compute real CPU usage.
+    #   - CURRENT_PROC
+    #   - p1
+    #   ...
+    #   - pN
+    current_process = psutil.Process()
+    parent_pid = current_process.ppid()
+    children = __get_children_processes(parent_pid)
+    return [c for c in children if c.pid != current_process.pid]
+
+
+# Monitors
+
+
+class JupyterKernelMonitor(AbstractIsBusyMonitor):
     BASE_URL = "http://localhost:8888"
     HEADERS = {"accept": "application/json"}
+
+    def __init__(self, poll_interval: float) -> None:
+        super().__init__(poll_interval=poll_interval)
 
     def _get(self, path: str) -> dict:
         r = requests.get(f"{self.BASE_URL}{path}", headers=self.HEADERS)
         return r.json()
 
-    def are_kernels_busy(self) -> bool:
+    def _are_kernels_busy(self) -> bool:
         json_response = self._get("/api/kernels")
 
         are_kernels_busy = False
@@ -48,52 +114,24 @@ class JupyterKernelMonitor:
 
         return are_kernels_busy
 
+    def _check_if_busy(self) -> bool:
+        return self._are_kernels_busy()
 
-class CPUUsageMonitor:
-    def __init__(self, threshold: float):
+
+class CPUUsageMonitor(AbstractIsBusyMonitor):
+    def __init__(self, poll_interval: float, *, threshold: float):
+        super().__init__(poll_interval=poll_interval)
         self.threshold = threshold
-
-    def _get_children_processes(self, pid) -> list[psutil.Process]:
-        try:
-            return psutil.Process(pid).children(recursive=True)
-        except psutil.NoSuchProcess:
-            return []
-
-    def _get_brother_processes(self) -> list[psutil.Process]:
-        # Returns the CPU usage of all processes except this one.
-        # ASSUMPTIONS:
-        # - `CURRENT_PROC` is a child of root process
-        # - `CURRENT_PROC` does not create any child processes
-        #
-        # It looks for its brothers (and their children) p1 to pN in order
-        # to compute real CPU usage.
-        #   - CURRENT_PROC
-        #   - p1
-        #   ...
-        #   - pN
-        current_process = psutil.Process()
-        parent_pid = current_process.ppid()
-        children = self._get_children_processes(parent_pid)
-        return [c for c in children if c.pid != current_process.pid]
-
-    def _get_cpu_usage(self, pid: int) -> float:
-        cmd = f"ps -p {pid} -o %cpu --no-headers"
-        output = subprocess.check_output(cmd, shell=True, universal_newlines=True)
-        try:
-            return float(output)
-        except ValueError:
-            print(f"Could not parse {pid} cpu usage: {output}")
-            return float(0)
 
     def _get_total_cpu_usage(self) -> float:
         with ThreadPoolExecutor(max_workers=10) as executor:
             futures = [
                 executor.submit(x.cpu_percent, CPU_USAGE_MONITORING_INTERVAL_S)
-                for x in self._get_brother_processes()
+                for x in _get_brother_processes()
             ]
             return sum([future.result() for future in as_completed(futures)])
 
-    def are_children_busy(self) -> bool:
+    def _check_if_busy(self) -> bool:
         return self._get_total_cpu_usage() >= self.threshold
 
 
@@ -102,14 +140,13 @@ class ActivityManager:
         self.interval = interval
         self.last_idle: datetime | None = None
 
-        self.jupyter_kernel_monitor = JupyterKernelMonitor()
-        self.cpu_usage_monitor = CPUUsageMonitor(THRESHOLD_CPU_USAGE)
+        self.jupyter_kernel_monitor = JupyterKernelMonitor(CHECK_INTERVAL_S)
+        self.cpu_usage_monitor = CPUUsageMonitor(
+            CHECK_INTERVAL_S, threshold=THRESHOLD_CPU_USAGE
+        )
 
     def check(self):
-        is_busy = (
-            self.jupyter_kernel_monitor.are_kernels_busy()
-            or self.cpu_usage_monitor.are_children_busy()
-        )
+        is_busy = self.jupyter_kernel_monitor.is_busy or self.cpu_usage_monitor.is_busy
 
         if is_busy:
             self.last_idle = None
@@ -121,7 +158,8 @@ class ActivityManager:
         if self.last_idle is None:
             return 0
 
-        return (datetime.utcnow() - self.last_idle).total_seconds()
+        idle_seconds = (datetime.utcnow() - self.last_idle).total_seconds()
+        return idle_seconds if idle_seconds > 0 else 0
 
     async def run(self):
         while True:
@@ -130,20 +168,21 @@ class ActivityManager:
             await asyncio.sleep(self.interval)
 
 
-activity_manager = ActivityManager(CHECK_INTERVAL_S)
-
-
 class DebugHandler(tornado.web.RequestHandler):
-    def get(self):
+    def initialize(self, activity_manager: ActivityManager):
+        self.activity_manager: ActivityManager = activity_manager
+
+    async def get(self):
+        assert self.activity_manager
         self.write(
             json.dumps(
                 {
+                    "seconds_inactive": self.activity_manager.get_idle_seconds(),
                     "cpu_usage": {
-                        "current": activity_manager.cpu_usage_monitor._get_total_cpu_usage(),
-                        "busy": activity_manager.cpu_usage_monitor.are_children_busy(),
+                        "is_busy": self.activity_manager.cpu_usage_monitor.is_busy,
                     },
-                    "kernal_monitor": {
-                        "busy": activity_manager.jupyter_kernel_monitor.are_kernels_busy()
+                    "kernel_monitor": {
+                        "is_busy": self.activity_manager.jupyter_kernel_monitor.is_busy
                     },
                 }
             )
@@ -151,24 +190,28 @@ class DebugHandler(tornado.web.RequestHandler):
 
 
 class MainHandler(tornado.web.RequestHandler):
-    def get(self):
-        idle_seconds = activity_manager.get_idle_seconds()
-        seconds_inactive = idle_seconds if idle_seconds > 0 else 0
+    def initialize(self, activity_manager: ActivityManager):
+        self.activity_manager: ActivityManager = activity_manager
 
-        self.write(json.dumps({"seconds_inactive": seconds_inactive}))
+    async def get(self):
+        assert self.activity_manager
+        self.write(
+            json.dumps({"seconds_inactive": self.activity_manager.get_idle_seconds()})
+        )
 
 
-def make_app() -> tornado.web.Application:
+def make_app(activity_manager) -> tornado.web.Application:
     return tornado.web.Application(
         [
-            (r"/", MainHandler),
-            (r"/debug", DebugHandler),
+            (r"/", MainHandler, dict(activity_manager=activity_manager)),
+            (r"/debug", DebugHandler, dict(activity_manager=activity_manager)),
         ]
     )
 
 
 async def main():
-    app = make_app()
+    activity_manager = ActivityManager(CHECK_INTERVAL_S)
+    app = make_app(activity_manager)
     app.listen(19597)
     asyncio.create_task(activity_manager.run())
     await asyncio.Event().wait()

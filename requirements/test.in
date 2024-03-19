@@ -1,0 +1,12 @@
+# from jupyter
+
+psutil
+tornado
+
+# testing
+
+pytest
+pytest-asyncio
+pytest-mock
+requests
+tenacity

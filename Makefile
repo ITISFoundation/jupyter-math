@@ -29,6 +29,7 @@ devenv: .venv  ## create a python virtual environment with tools to dev, run and
 requirements: devenv ## runs pip-tools to build requirements.txt that will be installed in the JupyterLab
 	# freezes requirements
 	pip-compile kernels/python-maths/requirements.in --resolver=backtracking --output-file kernels/python-maths/requirements.txt
+	pip-compile requirements/test.in --resolver=backtracking --output-file requirements/test.txt
 
 # Builds new service version ----------------------------------------------------------------------------
 define _bumpversion
@@ -65,6 +66,14 @@ publish-local: ## push to local throw away registry to test integration
 	docker tag simcore/services/dynamic/${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG} registry:5000/simcore/services/dynamic/$(DOCKER_IMAGE_NAME):$(DOCKER_IMAGE_TAG)
 	docker push registry:5000/simcore/services/dynamic/$(DOCKER_IMAGE_NAME):$(DOCKER_IMAGE_TAG)
 	@curl registry:5000/v2/_catalog | jq
+
+.PHONY: install-dev
+install-dev:	## run tests in development mode
+	pip install -r requirements/test.txt
+
+.PHONY: tests-dev
+tests-dev:	## run tests in development mode
+	.venv/bin/pytest --pdb -vvv tests
 
 .PHONY: help
 help: ## this colorful help
