@@ -13,6 +13,7 @@ import json
 import psutil
 import requests
 import tornado
+import subprocess
 
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from contextlib import suppress
@@ -22,7 +23,7 @@ from typing import Final
 
 CHECK_INTERVAL_S: Final[float] = 5
 CPU_USAGE_MONITORING_INTERVAL_S: Final[float] = 1
-THRESHOLD_CPU_USAGE: Final[float] = 20  # percent in range [0, 100]
+THRESHOLD_CPU_USAGE: Final[float] = 5  # percent in range [0, 100]
 
 
 class JupyterKernelMonitor:
@@ -51,6 +52,7 @@ class JupyterKernelMonitor:
 class CPUUsageMonitor:
     def __init__(self, threshold: float):
         self.threshold = threshold
+
     def _get_children_processes(self, pid) -> list[psutil.Process]:
         try:
             return psutil.Process(pid).children(recursive=True)
@@ -62,7 +64,7 @@ class CPUUsageMonitor:
         # ASSUMPTIONS:
         # - `CURRENT_PROC` is a child of root process
         # - `CURRENT_PROC` does not create any child processes
-        #  
+        #
         # It looks for its brothers (and their children) p1 to pN in order
         # to compute real CPU usage.
         #   - CURRENT_PROC
@@ -73,6 +75,15 @@ class CPUUsageMonitor:
         parent_pid = current_process.ppid()
         children = self._get_children_processes(parent_pid)
         return [c for c in children if c.pid != current_process.pid]
+
+    def _get_cpu_usage(self, pid: int) -> float:
+        cmd = f"ps -p {pid} -o %cpu --no-headers"
+        output = subprocess.check_output(cmd, shell=True, universal_newlines=True)
+        try:
+            return float(output)
+        except ValueError:
+            print(f"Could not parse {pid} cpu usage: {output}")
+            return float(0)
 
     def _get_total_cpu_usage(self) -> float:
         with ThreadPoolExecutor(max_workers=10) as executor:
@@ -122,6 +133,23 @@ class ActivityManager:
 activity_manager = ActivityManager(CHECK_INTERVAL_S)
 
 
+class DebugHandler(tornado.web.RequestHandler):
+    def get(self):
+        self.write(
+            json.dumps(
+                {
+                    "cpu_usage": {
+                        "current": activity_manager.cpu_usage_monitor._get_total_cpu_usage(),
+                        "busy": activity_manager.cpu_usage_monitor.are_children_busy(),
+                    },
+                    "kernal_monitor": {
+                        "busy": activity_manager.jupyter_kernel_monitor.are_kernels_busy()
+                    },
+                }
+            )
+        )
+
+
 class MainHandler(tornado.web.RequestHandler):
     def get(self):
         idle_seconds = activity_manager.get_idle_seconds()
@@ -131,7 +159,12 @@ class MainHandler(tornado.web.RequestHandler):
 
 
 def make_app() -> tornado.web.Application:
-    return tornado.web.Application([(r"/", MainHandler)])
+    return tornado.web.Application(
+        [
+            (r"/", MainHandler),
+            (r"/debug", DebugHandler),
+        ]
+    )
 
 
 async def main():

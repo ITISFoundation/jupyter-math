@@ -93,7 +93,7 @@ ENV JP_LSP_VIRTUAL_DIR="/home/${NB_USER}/.virtual_documents"
 COPY --chown=$NB_UID:$NB_GID docker /docker
 
 RUN chmod +x /docker/activity.py \
-  && chmod +x /docker/kernel_checker.py
+  && chmod +x /docker/activity_monitor.py
 
 RUN echo 'export PATH="/home/${NB_USER}/.venv/bin:$PATH"' >> "/home/${NB_USER}/.bashrc"
 
