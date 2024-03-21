@@ -60,7 +60,7 @@ async def test_cpu_usage_monitor_not_busy(
             stop=stop_after_delay(5), wait=wait_fixed(0.1), reraise=True
         ):
             with attempt:
-                assert cpu_usage_monitor._get_total_cpu_usage() == 0
+                assert cpu_usage_monitor.get_total_cpu_usage() == 0
                 assert cpu_usage_monitor.is_busy is False
 
 
@@ -77,7 +77,7 @@ async def test_cpu_usage_monitor_still_busy(
         await asyncio.sleep(1)
 
         # must still result busy
-        assert cpu_usage_monitor._get_total_cpu_usage() > 0
+        assert cpu_usage_monitor.get_total_cpu_usage() > 0
         assert cpu_usage_monitor.is_busy is True
 
 
@@ -96,7 +96,7 @@ async def test_disk_usage_monitor_not_busy(
             stop=stop_after_delay(5), wait=wait_fixed(0.1), reraise=True
         ):
             with attempt:
-                read_bytes, write_bytes = disk_usage_monitor._get_total_disk_usage()
+                read_bytes, write_bytes = disk_usage_monitor.get_total_disk_usage()
                 assert read_bytes == 0
                 assert write_bytes == 0
                 assert disk_usage_monitor.is_busy is False
@@ -115,7 +115,7 @@ async def test_disk_usage_monitor_still_busy(
     ) as disk_usage_monitor:
         # wait for monitor to trigger
         await asyncio.sleep(1)
-        _, write_bytes = disk_usage_monitor._get_total_disk_usage()
+        _, write_bytes = disk_usage_monitor.get_total_disk_usage()
         # NOTE: due to os disk cache reading is not reliable not testing it
         assert write_bytes > 0
 
@@ -128,8 +128,13 @@ async def server_url() -> str:
     return "http://localhost:8899"
 
 
+@pytest.fixture
+def mock_jupyter_kernel_monitor(mocker: MockFixture) -> None:
+    activity_monitor.JupyterKernelMonitor._are_kernels_busy = lambda _: False
+
+
 @pytest_asyncio.fixture
-async def tornado_server(server_url: str) -> None:
+async def tornado_server(mock_jupyter_kernel_monitor: None, server_url: str) -> None:
     app = await activity_monitor.make_app()
 
     stop_queue = Queue()
@@ -171,7 +176,8 @@ async def tornado_server(server_url: str) -> None:
 
 @pytest.fixture
 def mock_check_interval(mocker: MockFixture) -> None:
-    mocker.patch("activity_monitor.CHECK_INTERVAL_S", new=0.5)
+    mocker.patch("activity_monitor.CHECK_INTERVAL_S", new=1)
+    assert activity_monitor.CHECK_INTERVAL_S == 1
 
 
 @pytest.mark.asyncio
@@ -182,7 +188,7 @@ async def test_tornado_server_ok(
     assert result.status_code == 200
 
 
-async def test_activity_monitor_not_busy(
+async def test_activity_monitor_becomes_not_busy(
     mock_check_interval: None,
     socket_server: None,
     mock__get_brother_processes: Callable[[list[int]], list[psutil.Process]],
@@ -197,17 +203,15 @@ async def test_activity_monitor_not_busy(
         stop=stop_after_delay(10), wait=wait_fixed(0.1), reraise=True
     ):
         with attempt:
-            result = requests.get(f"{server_url}/", timeout=5)
+            # check that all become not busy
+            result = requests.get(f"{server_url}/debug", timeout=5)
+            assert result.status_code == 200
+            debug_response = result.json()
+            assert debug_response["cpu_usage"]["is_busy"] is False
+            assert debug_response["disk_usage"]["is_busy"] is False
+            assert debug_response["kernel_monitor"]["is_busy"] is False
+
+            result = requests.get(f"{server_url}/", timeout=2)
             assert result.status_code == 200
             response = result.json()
             assert response["seconds_inactive"] > 0
-
-            result = requests.get(f"{server_url}/debug", timeout=5)
-            assert result.status_code == 200
-            response = result.json()
-            assert response == {
-                "seconds_inactive": 0,
-                "cpu_usage": {"is_busy": True},
-                "disk_usage": {"is_busy": True},
-                "kernel_monitor": {"is_busy": True},
-            }

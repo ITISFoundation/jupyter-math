@@ -45,7 +45,8 @@ class AbstractIsBusyMonitor:
 
     def _worker(self) -> None:
         while self._keep_running:
-            self.is_busy = self._check_if_busy()
+            with suppress(Exception):
+                self.is_busy = self._check_if_busy()
             time.sleep(self._poll_interval)
 
     def start(self) -> None:
@@ -130,7 +131,7 @@ class CPUUsageMonitor(AbstractIsBusyMonitor):
         super().__init__(poll_interval=poll_interval)
         self.busy_threshold = busy_threshold
 
-    def _get_total_cpu_usage(self) -> float:
+    def get_total_cpu_usage(self) -> float:
         futures = [
             self.thread_executor.submit(
                 x.cpu_percent, self.CPU_USAGE_MONITORING_INTERVAL_S
@@ -140,7 +141,7 @@ class CPUUsageMonitor(AbstractIsBusyMonitor):
         return sum([future.result() for future in as_completed(futures)])
 
     def _check_if_busy(self) -> bool:
-        return self._get_total_cpu_usage() > self.busy_threshold
+        return self.get_total_cpu_usage() > self.busy_threshold
 
 
 class DiskUsageMonitor(AbstractIsBusyMonitor):
@@ -168,7 +169,7 @@ class DiskUsageMonitor(AbstractIsBusyMonitor):
         write_bytes = io_end.write_bytes - io_start.write_bytes
         return read_bytes, write_bytes
 
-    def _get_total_disk_usage(self) -> tuple[int, int]:
+    def get_total_disk_usage(self) -> tuple[int, int]:
         futures = [
             self.thread_executor.submit(self._get_process_disk_usage, x)
             for x in _get_brother_processes()
@@ -186,7 +187,7 @@ class DiskUsageMonitor(AbstractIsBusyMonitor):
         return read_bytes, write_bytes
 
     def _check_if_busy(self) -> bool:
-        read_bytes, write_bytes = self._get_total_disk_usage()
+        read_bytes, write_bytes = self.get_total_disk_usage()
         return (
             read_bytes > self.read_usage_threshold
             or write_bytes > self.write_usage_threshold
@@ -229,6 +230,9 @@ class ActivityManager:
         return idle_seconds if idle_seconds > 0 else 0
 
     async def run(self):
+        self.jupyter_kernel_monitor.start()
+        self.cpu_usage_monitor.start()
+        self.disk_usage_monitor.start()
         while True:
             with suppress(Exception):
                 self.check()
@@ -247,9 +251,11 @@ class DebugHandler(tornado.web.RequestHandler):
                     "seconds_inactive": self.activity_manager.get_idle_seconds(),
                     "cpu_usage": {
                         "is_busy": self.activity_manager.cpu_usage_monitor.is_busy,
+                        "total": self.activity_manager.cpu_usage_monitor.get_total_cpu_usage(),
                     },
                     "disk_usage": {
-                        "is_busy": self.activity_manager.disk_usage_monitor.is_busy
+                        "is_busy": self.activity_manager.disk_usage_monitor.is_busy,
+                        "total": self.activity_manager.disk_usage_monitor.get_total_disk_usage(),
                     },
                     "kernel_monitor": {
                         "is_busy": self.activity_manager.jupyter_kernel_monitor.is_busy
