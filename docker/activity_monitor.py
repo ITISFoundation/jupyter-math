@@ -270,20 +270,21 @@ class MainHandler(tornado.web.RequestHandler):
         )
 
 
-def make_app(activity_manager) -> tornado.web.Application:
-    return tornado.web.Application(
+async def make_app() -> tornado.web.Application:
+    activity_manager = ActivityManager(CHECK_INTERVAL_S)
+    app = tornado.web.Application(
         [
-            (r"/", MainHandler, dict(activity_manager=activity_manager)),
-            (r"/debug", DebugHandler, dict(activity_manager=activity_manager)),
+            (r"/", MainHandler, {"activity_manager": activity_manager}),
+            (r"/debug", DebugHandler, {"activity_manager": activity_manager}),
         ]
     )
+    asyncio.create_task(activity_manager.run())
+    return app
 
 
 async def main():
-    activity_manager = ActivityManager(CHECK_INTERVAL_S)
-    app = make_app(activity_manager)
+    app = await make_app()
     app.listen(19597)
-    asyncio.create_task(activity_manager.run())
     await asyncio.Event().wait()
 
 
