@@ -248,6 +248,9 @@ class DebugHandler(tornado.web.RequestHandler):
                     "cpu_usage": {
                         "is_busy": self.activity_manager.cpu_usage_monitor.is_busy,
                     },
+                    "disk_usage": {
+                        "is_busy": self.activity_manager.disk_usage_monitor.is_busy
+                    },
                     "kernel_monitor": {
                         "is_busy": self.activity_manager.jupyter_kernel_monitor.is_busy
                     },

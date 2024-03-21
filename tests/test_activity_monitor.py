@@ -54,6 +54,7 @@ async def test_cpu_usage_monitor_not_busy(
             stop=stop_after_delay(5), wait=wait_fixed(0.1), reraise=True
         ):
             with attempt:
+                assert cpu_usage_monitor._get_total_cpu_usage() == 0
                 assert cpu_usage_monitor.is_busy is False
 
 
@@ -70,6 +71,7 @@ async def test_cpu_usage_monitor_still_busy(
         time.sleep(1)
 
         # must still result busy
+        assert cpu_usage_monitor._get_total_cpu_usage() > 0
         assert cpu_usage_monitor.is_busy is True
 
 
