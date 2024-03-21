@@ -75,6 +75,10 @@ install-dev:	## run tests in development mode
 tests-dev:	## run tests in development mode
 	.venv/bin/pytest --pdb -vvv tests
 
+.PHONY: tests-ci
+tests-dev:	## run tests in development mode
+	.venv/bin/pytest -vvv tests
+
 .PHONY: help
 help: ## this colorful help
 	@echo "Recipes for '$(notdir $(CURDIR))':"
