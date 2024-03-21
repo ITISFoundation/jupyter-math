@@ -49,7 +49,7 @@ async def test_cpu_usage_monitor_not_busy(
     activity_generator = create_activity_generator(network=False, cpu=False, disk=False)
     mock__get_brother_processes([activity_generator.get_pid()])
 
-    with activity_monitor.CPUUsageMonitor(1, threshold=5) as cpu_usage_monitor:
+    with activity_monitor.CPUUsageMonitor(1, busy_threshold=5) as cpu_usage_monitor:
         async for attempt in AsyncRetrying(
             stop=stop_after_delay(5), wait=wait_fixed(0.1), reraise=True
         ):
@@ -65,7 +65,7 @@ async def test_cpu_usage_monitor_still_busy(
     activity_generator = create_activity_generator(network=False, cpu=True, disk=False)
     mock__get_brother_processes([activity_generator.get_pid()])
 
-    with activity_monitor.CPUUsageMonitor(0.5, threshold=5) as cpu_usage_monitor:
+    with activity_monitor.CPUUsageMonitor(0.5, busy_threshold=5) as cpu_usage_monitor:
         # wait for monitor to trigger
         time.sleep(1)
 

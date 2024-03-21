@@ -17,8 +17,8 @@ from abc import abstractmethod
 
 
 CHECK_INTERVAL_S: Final[float] = 5
-CPU_USAGE_MONITORING_INTERVAL_S: Final[float] = 1
-THRESHOLD_CPU_USAGE: Final[float] = 5  # percent in range [0, 100]
+BUSY_THRESHOLD_CPU_USAGE: Final[float] = 5  # percent in range [0, 100]
+THREAD_EXECUTOR_WORKERS: Final[int] = 10
 
 
 # Utilities
@@ -29,6 +29,7 @@ class AbstractIsBusyMonitor:
         self._thread: Thread | None = None
 
         self.is_busy: bool = True
+        self.thread_executor = ThreadPoolExecutor(max_workers=THREAD_EXECUTOR_WORKERS)
 
     @abstractmethod
     def _check_if_busy(self) -> bool:
@@ -52,6 +53,7 @@ class AbstractIsBusyMonitor:
         self._keep_running = False
         if self._thread:
             self._thread.join()
+        self.thread_executor.shutdown(wait=True)
 
     def __enter__(self):
         self.start()
@@ -119,20 +121,73 @@ class JupyterKernelMonitor(AbstractIsBusyMonitor):
 
 
 class CPUUsageMonitor(AbstractIsBusyMonitor):
-    def __init__(self, poll_interval: float, *, threshold: float):
+    CPU_USAGE_MONITORING_INTERVAL_S: Final[float] = 1
+
+    def __init__(self, poll_interval: float, *, busy_threshold: float):
         super().__init__(poll_interval=poll_interval)
-        self.threshold = threshold
+        self.busy_threshold = busy_threshold
 
     def _get_total_cpu_usage(self) -> float:
-        with ThreadPoolExecutor(max_workers=10) as executor:
-            futures = [
-                executor.submit(x.cpu_percent, CPU_USAGE_MONITORING_INTERVAL_S)
-                for x in _get_brother_processes()
-            ]
-            return sum([future.result() for future in as_completed(futures)])
+        futures = [
+            self.thread_executor.submit(
+                x.cpu_percent, self.CPU_USAGE_MONITORING_INTERVAL_S
+            )
+            for x in _get_brother_processes()
+        ]
+        return sum([future.result() for future in as_completed(futures)])
 
     def _check_if_busy(self) -> bool:
-        return self._get_total_cpu_usage() >= self.threshold
+        return self._get_total_cpu_usage() >= self.busy_threshold
+
+
+class DiskUsageMonitor(AbstractIsBusyMonitor):
+    DISK_USAGE_MONITORING_INTERVAL_S: Final[float] = 1
+
+    def __init__(
+        self,
+        poll_interval: float,
+        *,
+        read_usage_threshold: float,
+        write_usage_threshold: float,
+    ):
+        super().__init__(poll_interval=poll_interval)
+        self.read_usage_threshold = read_usage_threshold
+        self.write_usage_threshold = write_usage_threshold
+        self.executor = ThreadPoolExecutor(max_workers=THREAD_EXECUTOR_WORKERS)
+
+    def _get_process_disk_usage(self, proc: psutil.Process) -> tuple[int, int]:
+        io_start = proc.disk_io_counters()
+        time.sleep(self.DISK_USAGE_MONITORING_INTERVAL_S)
+        io_end = proc.disk_io_counters()
+
+        # Calculate the differences
+        read_bytes = io_end.read_bytes - io_start.read_bytes
+        write_bytes = io_end.write_bytes - io_start.write_bytes
+        return read_bytes, write_bytes
+
+    def _get_total_disk_usage(self) -> tuple[int, int]:
+        futures = [
+            self.thread_executor.submit(self._get_process_disk_usage, x)
+            for x in _get_brother_processes()
+        ]
+
+        disk_usage: list[tuple[int, int]] = [
+            future.result() for future in as_completed(futures)
+        ]
+        read_bytes: int = 0
+        write_bytes: int = 0
+        for read, write in disk_usage:
+            read_bytes += read
+            write_bytes += write
+
+        return read_bytes, write_bytes
+
+    def _check_if_busy(self) -> bool:
+        read_bytes, write_bytes = self._get_total_disk_usage()
+        return (
+            read_bytes >= self.read_usage_threshold
+            or write_bytes >= self.write_usage_threshold
+        )
 
 
 class ActivityManager:
@@ -142,11 +197,17 @@ class ActivityManager:
 
         self.jupyter_kernel_monitor = JupyterKernelMonitor(CHECK_INTERVAL_S)
         self.cpu_usage_monitor = CPUUsageMonitor(
-            CHECK_INTERVAL_S, threshold=THRESHOLD_CPU_USAGE
+            CHECK_INTERVAL_S, busy_threshold=BUSY_THRESHOLD_CPU_USAGE
         )
+        # TODO: change threshold
+        self.disk_usage_monitor = DiskUsageMonitor(CHECK_INTERVAL_S, usage_threshold=40)
 
     def check(self):
-        is_busy = self.jupyter_kernel_monitor.is_busy or self.cpu_usage_monitor.is_busy
+        is_busy = (
+            self.jupyter_kernel_monitor.is_busy
+            or self.cpu_usage_monitor.is_busy
+            or self.disk_usage_monitor.is_busy
+        )
 
         if is_busy:
             self.last_idle = None
