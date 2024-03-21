@@ -154,6 +154,10 @@ async def tornado_server(mock_jupyter_kernel_monitor: None, server_url: str) -> 
         current_io_loop.start()
         stopping_thread.join()
 
+        # cleanly shut down tornado server and loop
+        current_io_loop.close()
+        http_server.stop()
+
     thread = threading.Thread(target=_run_server_worker, daemon=True)
     thread.start()
 
