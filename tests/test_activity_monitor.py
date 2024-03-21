@@ -1,20 +1,23 @@
 import asyncio
 import pytest
 import psutil
-import requests
 import tornado.web
+import json
 import tornado.httpserver
 import tornado.ioloop
 import threading
 import pytest_asyncio
+import requests
+import requests_mock
 
 from queue import Queue
-from typing import Callable, TYPE_CHECKING
+from typing import Callable, Iterable, TYPE_CHECKING
 from pytest_mock import MockFixture
 from tenacity import AsyncRetrying
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
 from conftest import _ActivityGenerator
+
 
 if TYPE_CHECKING:
     from ..docker import activity_monitor
@@ -123,14 +126,30 @@ async def test_disk_usage_monitor_still_busy(
         assert disk_usage_monitor.is_busy is True
 
 
+@pytest.fixture
+def mock_jupyter_kernel_monitor(are_kernels_busy: bool) -> Iterable[None]:
+    with requests_mock.Mocker(real_http=True) as m:
+        m.get("http://localhost:8888/api/kernels", text=json.dumps([{"id": "atest1"}]))
+        m.get(
+            "http://localhost:8888/api/kernels/atest1",
+            text=json.dumps(
+                {"execution_state": "running" if are_kernels_busy else "idle"}
+            ),
+        )
+        yield
+
+
+@pytest.mark.parametrize("are_kernels_busy", [True, False])
+def test_jupyter_kernel_monitor(
+    mock_jupyter_kernel_monitor: None, are_kernels_busy: bool
+):
+    kernel_monitor = activity_monitor.JupyterKernelMonitor(1)
+    assert kernel_monitor._are_kernels_busy() is are_kernels_busy
+
+
 @pytest_asyncio.fixture
 async def server_url() -> str:
-    return "http://localhost:8899"
-
-
-@pytest.fixture
-def mock_jupyter_kernel_monitor(mocker: MockFixture) -> None:
-    activity_monitor.JupyterKernelMonitor._are_kernels_busy = lambda _: False
+    return f"http://localhost:{activity_monitor.LISTEN_PORT}"
 
 
 @pytest_asyncio.fixture
@@ -141,7 +160,7 @@ async def tornado_server(mock_jupyter_kernel_monitor: None, server_url: str) -> 
 
     def _run_server_worker():
         http_server = tornado.httpserver.HTTPServer(app)
-        http_server.listen(8899)
+        http_server.listen(activity_monitor.LISTEN_PORT)
         current_io_loop = tornado.ioloop.IOLoop.current()
 
         def _queue_stopper() -> None:
@@ -184,7 +203,7 @@ def mock_check_interval(mocker: MockFixture) -> None:
     assert activity_monitor.CHECK_INTERVAL_S == 1
 
 
-@pytest.mark.asyncio
+@pytest.mark.parametrize("are_kernels_busy", [False])
 async def test_tornado_server_ok(
     mock_check_interval: None, tornado_server: None, server_url: str
 ):
@@ -192,6 +211,7 @@ async def test_tornado_server_ok(
     assert result.status_code == 200
 
 
+@pytest.mark.parametrize("are_kernels_busy", [False])
 async def test_activity_monitor_becomes_not_busy(
     mock_check_interval: None,
     socket_server: None,

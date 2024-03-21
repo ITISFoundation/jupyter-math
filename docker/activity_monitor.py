@@ -16,6 +16,8 @@ from typing import Final
 from abc import abstractmethod
 
 
+LISTEN_PORT: Final[int] = 19597
+
 CHECK_INTERVAL_S: Final[float] = 5
 THREAD_EXECUTOR_WORKERS: Final[int] = 10
 

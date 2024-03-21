@@ -9,4 +9,5 @@ pytest
 pytest-asyncio
 pytest-mock
 requests
+requests-mock
 tenacity
