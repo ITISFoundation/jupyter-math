@@ -8,7 +8,7 @@ import tornado.ioloop
 import threading
 import pytest_asyncio
 
-
+from queue import Queue
 from typing import Callable, TYPE_CHECKING
 from pytest_mock import MockFixture
 from tenacity import AsyncRetrying
@@ -132,15 +132,24 @@ async def server_url() -> str:
 async def tornado_server(server_url: str) -> None:
     app = await activity_monitor.make_app()
 
-    def _start_tornado():
+    stop_queue = Queue()
+
+    def _run_server_worker():
         http_server = tornado.httpserver.HTTPServer(app)
         http_server.listen(8899)
-        tornado.ioloop.IOLoop.current().start()
+        current_io_loop = tornado.ioloop.IOLoop.current()
 
-    def _stop_tornado():
-        tornado.ioloop.IOLoop.current().stop()
+        def _queue_stopper() -> None:
+            stop_queue.get()
+            current_io_loop.stop()
 
-    thread = threading.Thread(target=lambda: _start_tornado(), daemon=True)
+        stopping_thread = threading.Thread(target=_queue_stopper, daemon=True)
+        stopping_thread.start()
+
+        current_io_loop.start()
+        stopping_thread.join()
+
+    thread = threading.Thread(target=_run_server_worker, daemon=True)
     thread.start()
 
     # ensure server is running
@@ -153,7 +162,11 @@ async def tornado_server(server_url: str) -> None:
 
     yield None
 
-    _stop_tornado()
+    stop_queue.put(None)
+    thread.join(timeout=1)
+
+    with pytest.raises(requests.exceptions.ReadTimeout):
+        requests.get(f"{server_url}/", timeout=1)
 
 
 @pytest.fixture
@@ -162,7 +175,9 @@ def mock_check_interval(mocker: MockFixture) -> None:
 
 
 @pytest.mark.asyncio
-async def test_tornado_server_ok(mock_check_interval: None, tornado_server: None, server_url:str):
+async def test_tornado_server_ok(
+    mock_check_interval: None, tornado_server: None, server_url: str
+):
     result = requests.get(f"{server_url}/", timeout=5)
     assert result.status_code == 200
 
