@@ -76,7 +76,7 @@ tests-dev:	## run tests in development mode
 	.venv/bin/pytest --pdb -vvv tests
 
 .PHONY: tests-ci
-tests-dev:	## run tests in development mode
+tests-ci:	## run testds in the CI
 	.venv/bin/pytest -vvv tests
 
 .PHONY: help
