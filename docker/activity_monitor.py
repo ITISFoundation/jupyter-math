@@ -17,8 +17,11 @@ from abc import abstractmethod
 
 
 CHECK_INTERVAL_S: Final[float] = 5
-BUSY_THRESHOLD_CPU_USAGE: Final[float] = 5  # percent in range [0, 100]
 THREAD_EXECUTOR_WORKERS: Final[int] = 10
+
+BUSY_USAGE_THRESHOLD_CPU: Final[float] = 5  # percent in range [0, 100]
+BUSY_USAGE_THRESHOLD_DISK_READ: Final[int] = 0  # in bytes
+BUSY_USAGE_THRESHOLD_DISK_WRITE: Final[int] = 0  # in bytes
 
 
 # Utilities
@@ -137,7 +140,7 @@ class CPUUsageMonitor(AbstractIsBusyMonitor):
         return sum([future.result() for future in as_completed(futures)])
 
     def _check_if_busy(self) -> bool:
-        return self._get_total_cpu_usage() >= self.busy_threshold
+        return self._get_total_cpu_usage() > self.busy_threshold
 
 
 class DiskUsageMonitor(AbstractIsBusyMonitor):
@@ -156,9 +159,9 @@ class DiskUsageMonitor(AbstractIsBusyMonitor):
         self.executor = ThreadPoolExecutor(max_workers=THREAD_EXECUTOR_WORKERS)
 
     def _get_process_disk_usage(self, proc: psutil.Process) -> tuple[int, int]:
-        io_start = proc.disk_io_counters()
+        io_start = proc.io_counters()
         time.sleep(self.DISK_USAGE_MONITORING_INTERVAL_S)
-        io_end = proc.disk_io_counters()
+        io_end = proc.io_counters()
 
         # Calculate the differences
         read_bytes = io_end.read_bytes - io_start.read_bytes
@@ -185,8 +188,8 @@ class DiskUsageMonitor(AbstractIsBusyMonitor):
     def _check_if_busy(self) -> bool:
         read_bytes, write_bytes = self._get_total_disk_usage()
         return (
-            read_bytes >= self.read_usage_threshold
-            or write_bytes >= self.write_usage_threshold
+            read_bytes > self.read_usage_threshold
+            or write_bytes > self.write_usage_threshold
         )
 
 
@@ -197,10 +200,13 @@ class ActivityManager:
 
         self.jupyter_kernel_monitor = JupyterKernelMonitor(CHECK_INTERVAL_S)
         self.cpu_usage_monitor = CPUUsageMonitor(
-            CHECK_INTERVAL_S, busy_threshold=BUSY_THRESHOLD_CPU_USAGE
+            CHECK_INTERVAL_S, busy_threshold=BUSY_USAGE_THRESHOLD_CPU
         )
-        # TODO: change threshold
-        self.disk_usage_monitor = DiskUsageMonitor(CHECK_INTERVAL_S, usage_threshold=40)
+        self.disk_usage_monitor = DiskUsageMonitor(
+            CHECK_INTERVAL_S,
+            read_usage_threshold=BUSY_USAGE_THRESHOLD_DISK_READ,
+            write_usage_threshold=BUSY_USAGE_THRESHOLD_DISK_WRITE,
+        )
 
     def check(self):
         is_busy = (

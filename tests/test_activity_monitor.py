@@ -71,3 +71,45 @@ async def test_cpu_usage_monitor_still_busy(
 
         # must still result busy
         assert cpu_usage_monitor.is_busy is True
+
+
+async def test_disk_usage_monitor_not_busy(
+    socket_server: None,
+    mock__get_brother_processes: Callable[[list[int]], list[psutil.Process]],
+    create_activity_generator: Callable[[bool, bool, bool], _ActivityGenerator],
+):
+    activity_generator = create_activity_generator(network=False, cpu=False, disk=False)
+    mock__get_brother_processes([activity_generator.get_pid()])
+
+    with activity_monitor.DiskUsageMonitor(
+        0.5, read_usage_threshold=0, write_usage_threshold=0
+    ) as disk_usage_monitor:
+        async for attempt in AsyncRetrying(
+            stop=stop_after_delay(5), wait=wait_fixed(0.1), reraise=True
+        ):
+            with attempt:
+                read_bytes, write_bytes = disk_usage_monitor._get_total_disk_usage()
+                assert read_bytes == 0
+                assert write_bytes == 0
+                assert disk_usage_monitor.is_busy is False
+
+
+async def test_disk_usage_monitor_still_busy(
+    socket_server: None,
+    mock__get_brother_processes: Callable[[list[int]], list[psutil.Process]],
+    create_activity_generator: Callable[[bool, bool, bool], _ActivityGenerator],
+):
+    activity_generator = create_activity_generator(network=False, cpu=False, disk=True)
+    mock__get_brother_processes([activity_generator.get_pid()])
+
+    with activity_monitor.DiskUsageMonitor(
+        0.5, read_usage_threshold=0, write_usage_threshold=0
+    ) as disk_usage_monitor:
+        # wait for monitor to trigger
+        time.sleep(1)
+        _, write_bytes = disk_usage_monitor._get_total_disk_usage()
+        # NOTE: due to os disk cache reading is not reliable not testing it
+        assert write_bytes > 0
+
+        # must still result busy
+        assert disk_usage_monitor.is_busy is True
