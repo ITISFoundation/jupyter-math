@@ -12,7 +12,7 @@ from threading import Thread
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from contextlib import suppress
 from datetime import datetime
-from typing import Final
+from typing import Final, TypeAlias
 from abc import abstractmethod
 
 
@@ -69,7 +69,7 @@ class AbstractIsBusyMonitor:
         self.stop()
 
 
-def __get_children_processes(pid) -> list[psutil.Process]:
+def __get_children_processes_recursive(pid) -> list[psutil.Process]:
     try:
         return psutil.Process(pid).children(recursive=True)
     except psutil.NoSuchProcess:
@@ -90,8 +90,8 @@ def _get_sibling_processes() -> list[psutil.Process]:
     #   - pN
     current_process = psutil.Process()
     parent_pid = current_process.ppid()
-    children = __get_children_processes(parent_pid)
-    return [c for c in children if c.pid != current_process.pid]
+    all_children = __get_children_processes_recursive(parent_pid)
+    return [c for c in all_children if c.pid != current_process.pid]
 
 
 # Monitors
@@ -126,6 +126,11 @@ class JupyterKernelMonitor(AbstractIsBusyMonitor):
         return self._are_kernels_busy()
 
 
+ProcessID: TypeAlias = int
+TimeSeconds: TypeAlias = float
+PercentCPU: TypeAlias = float
+
+
 class CPUUsageMonitor(AbstractIsBusyMonitor):
     CPU_USAGE_MONITORING_INTERVAL_S: Final[float] = 1
 
@@ -133,17 +138,53 @@ class CPUUsageMonitor(AbstractIsBusyMonitor):
         super().__init__(poll_interval=poll_interval)
         self.busy_threshold = busy_threshold
 
-    def get_total_cpu_usage(self) -> float:
+        # snapshot
+        self._last_sample: dict[ProcessID, tuple[TimeSeconds, PercentCPU]] = (
+            self._sample_total_cpu_usage()
+        )
+
+    def _sample_cpu_usage(
+        self, process: psutil.Process
+    ) -> tuple[ProcessID, tuple[TimeSeconds, PercentCPU]]:
+        # returns a tuple[pid, tuple[time, percent_cpu_usage]]
+        return (process.pid, (time.time(), process.cpu_percent()))
+
+    def _sample_total_cpu_usage(
+        self,
+    ) -> dict[ProcessID, tuple[TimeSeconds, PercentCPU]]:
         futures = [
-            self.thread_executor.submit(
-                x.cpu_percent, self.CPU_USAGE_MONITORING_INTERVAL_S
-            )
-            for x in _get_sibling_processes()
+            self.thread_executor.submit(self._sample_cpu_usage, p)
+            for p in _get_sibling_processes()
         ]
-        return sum([future.result() for future in as_completed(futures)])
+        return dict([f.result() for f in as_completed(futures)])
+
+    @staticmethod
+    def get_cpu_over_1_second(
+        last: tuple[TimeSeconds, PercentCPU], current: tuple[TimeSeconds, PercentCPU]
+    ) -> float:
+        interval = current[0] - last[0]
+        measured_cpu_in_interval = current[1]
+        # cpu_over_1_second[%] = 1[s] * measured_cpu_in_interval[%] / interval[s]
+        return measured_cpu_in_interval / interval
+
+    def get_total_cpu_usage_over_1_second(self) -> float:
+        current_sample = self._sample_total_cpu_usage()
+
+        total_cpu: float = 0
+        for pid, time_and_cpu_usage in current_sample.items():
+            if pid not in self._last_sample:
+                continue  # skip if not found
+
+            last_time_and_cpu_usage = self._last_sample[pid]
+            total_cpu += self.get_cpu_over_1_second(
+                last_time_and_cpu_usage, time_and_cpu_usage
+            )
+
+        self._last_sample = current_sample  # replace
+        return total_cpu
 
     def _check_if_busy(self) -> bool:
-        return self.get_total_cpu_usage() > self.busy_threshold
+        return self.get_total_cpu_usage_over_1_second() > self.busy_threshold
 
 
 class DiskUsageMonitor(AbstractIsBusyMonitor):
@@ -161,7 +202,12 @@ class DiskUsageMonitor(AbstractIsBusyMonitor):
         self.write_usage_threshold = write_usage_threshold
         self.executor = ThreadPoolExecutor(max_workers=THREAD_EXECUTOR_WORKERS)
 
+    # TODO: can we refactor these to take advantage of the internal sleep?
+    # and then report partial counters instead of doing it like it is now
     def _get_process_disk_usage(self, proc: psutil.Process) -> tuple[int, int]:
+        # between the two calls it can fail!
+        # rewrite to make it better!
+        # store previous counters -> measure and update again
         io_start = proc.io_counters()
         time.sleep(self.DISK_USAGE_MONITORING_INTERVAL_S)
         io_end = proc.io_counters()
@@ -194,6 +240,12 @@ class DiskUsageMonitor(AbstractIsBusyMonitor):
             read_bytes > self.read_usage_threshold
             or write_bytes > self.write_usage_threshold
         )
+
+
+class NetworkUsageMonitor(AbstractIsBusyMonitor):
+    NETWORK_USAGE_MONITORING_INTERVAL_S: Final[float] = 1
+
+    # Measure at regular intervals (is busy calls)
 
 
 class ActivityManager:
@@ -253,7 +305,7 @@ class DebugHandler(tornado.web.RequestHandler):
                     "seconds_inactive": self.activity_manager.get_idle_seconds(),
                     "cpu_usage": {
                         "is_busy": self.activity_manager.cpu_usage_monitor.is_busy,
-                        "total": self.activity_manager.cpu_usage_monitor.get_total_cpu_usage(),
+                        "total": self.activity_manager.cpu_usage_monitor.get_total_cpu_usage_over_1_second(),
                     },
                     "disk_usage": {
                         "is_busy": self.activity_manager.disk_usage_monitor.is_busy,
