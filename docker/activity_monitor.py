@@ -76,7 +76,7 @@ def __get_children_processes(pid) -> list[psutil.Process]:
         return []
 
 
-def _get_brother_processes() -> list[psutil.Process]:
+def _get_sibling_processes() -> list[psutil.Process]:
     # Returns the CPU usage of all processes except this one.
     # ASSUMPTIONS:
     # - `CURRENT_PROC` is a child of root process
@@ -138,7 +138,7 @@ class CPUUsageMonitor(AbstractIsBusyMonitor):
             self.thread_executor.submit(
                 x.cpu_percent, self.CPU_USAGE_MONITORING_INTERVAL_S
             )
-            for x in _get_brother_processes()
+            for x in _get_sibling_processes()
         ]
         return sum([future.result() for future in as_completed(futures)])
 
@@ -174,7 +174,7 @@ class DiskUsageMonitor(AbstractIsBusyMonitor):
     def get_total_disk_usage(self) -> tuple[int, int]:
         futures = [
             self.thread_executor.submit(self._get_process_disk_usage, x)
-            for x in _get_brother_processes()
+            for x in _get_sibling_processes()
         ]
 
         disk_usage: list[tuple[int, int]] = [

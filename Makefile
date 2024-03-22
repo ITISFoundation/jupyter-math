@@ -77,7 +77,7 @@ tests-dev:	## run tests in development mode
 
 .PHONY: tests-ci
 tests-ci:	## run testds in the CI
-	.venv/bin/pytest -vvv --color=yes --cov-report term --cov=activity_monitor  tests 
+	.venv/bin/pytest -vvv --color=yes --cov-report term --cov=activity_monitor tests 
 
 .PHONY: help
 help: ## this colorful help
