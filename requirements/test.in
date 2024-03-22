@@ -7,6 +7,7 @@ tornado
 
 pytest
 pytest-asyncio
+pytest-cov
 pytest-mock
 requests
 requests-mock
