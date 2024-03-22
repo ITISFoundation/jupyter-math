@@ -239,7 +239,3 @@ async def test_activity_monitor_becomes_not_busy(
             assert result.status_code == 200
             response = result.json()
             assert response["seconds_inactive"] > 0
-
-
-def test_always_fails():
-    assert False
