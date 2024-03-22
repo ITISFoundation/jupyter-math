@@ -8,5 +8,5 @@ IFS=$'\n\t'
 
 make .venv
 source .venv/bin/activate
-make install-dev
+make install-test
 make tests-ci
