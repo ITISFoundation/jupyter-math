@@ -63,7 +63,7 @@ async def test_cpu_usage_monitor_not_busy(
             stop=stop_after_delay(5), wait=wait_fixed(0.1), reraise=True
         ):
             with attempt:
-                assert cpu_usage_monitor.get_total_cpu_usage_over_1_second() == 0
+                assert cpu_usage_monitor.total_cpu_usage == 0
                 assert cpu_usage_monitor.is_busy is False
 
 
@@ -80,7 +80,7 @@ async def test_cpu_usage_monitor_still_busy(
         await asyncio.sleep(1)
 
         # must still result busy
-        assert cpu_usage_monitor.get_total_cpu_usage_over_1_second() > 0
+        assert cpu_usage_monitor.total_cpu_usage > 0
         assert cpu_usage_monitor.is_busy is True
 
 
@@ -140,11 +140,12 @@ def mock_jupyter_kernel_monitor(are_kernels_busy: bool) -> Iterable[None]:
 
 
 @pytest.mark.parametrize("are_kernels_busy", [True, False])
-def test_jupyter_kernel_monitor(
+async def test_jupyter_kernel_monitor(
     mock_jupyter_kernel_monitor: None, are_kernels_busy: bool
 ):
     kernel_monitor = activity_monitor.JupyterKernelMonitor(1)
-    assert kernel_monitor._are_kernels_busy() is are_kernels_busy
+    kernel_monitor._update_kernels_activity()
+    assert kernel_monitor.are_kernels_busy is are_kernels_busy
 
 
 @pytest_asyncio.fixture
