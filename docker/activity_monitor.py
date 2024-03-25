@@ -28,9 +28,9 @@ THREAD_EXECUTOR_WORKERS: Final[int] = 10
 
 _KB: Final[int] = 1024
 
-BUSY_USAGE_THRESHOLD_CPU: Final[float] = 5  # percent in range [0, 100]
-BUSY_USAGE_THRESHOLD_DISK_READ: Final[int] = 512 * _KB
-BUSY_USAGE_THRESHOLD_DISK_WRITE: Final[int] = 512 * _KB
+BUSY_USAGE_THRESHOLD_CPU: Final[float] = 0.5  # percent in range [0, 100]
+BUSY_USAGE_THRESHOLD_DISK_READ: Final[int] = 0
+BUSY_USAGE_THRESHOLD_DISK_WRITE: Final[int] = 0
 BUSY_USAGE_THRESHOLD_NETWORK_RECEIVED: Final[int] = 1 * _KB
 BUSY_USAGE_THRESHOLD_NETWORK_SENT: Final[int] = 1 * _KB
 
@@ -251,8 +251,8 @@ class DiskUsageMonitor(AbstractIsBusyMonitor):
         current: tuple[TimeSeconds, BytesRead, BytesWrite],
     ) -> tuple[BytesRead, BytesWrite]:
         interval = current[0] - last[0]
-        measured_bytes_read_in_interval = current[1]
-        measured_bytes_write_in_interval = current[2]
+        measured_bytes_read_in_interval = current[1] - last[1]
+        measured_bytes_write_in_interval = current[2] - last[2]
 
         # bytes_*_1_second[%] = 1[s] * measured_bytes_*_in_interval[%] / interval[s]
         bytes_read_over_1_second = int(measured_bytes_read_in_interval / interval)
