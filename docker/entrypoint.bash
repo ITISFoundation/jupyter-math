@@ -74,5 +74,5 @@ chmod gu-w "/home/${NB_USER}/work"
 
 echo
 echo "$INFO" "Starting notebook ..."
-exec gosu "$NB_USER" /docker/activity_monitor.py &
+exec gosu "$NB_USER" python /docker/activity_monitor.py &
 exec gosu "$NB_USER" /docker/boot_notebook.bash

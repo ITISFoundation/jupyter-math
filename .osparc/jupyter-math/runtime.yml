@@ -21,5 +21,5 @@ paths-mapping:
 callbacks-mapping:
   inactivity:
     service: container
-    command: "/docker/activity.py"
+    command: ["python", "/docker/activity.py"]
     timeout: 1
