@@ -26,11 +26,13 @@ KERNEL_CHECK_INTERVAL_S: Final[float] = 5
 CHECK_INTERVAL_S: Final[float] = 1
 THREAD_EXECUTOR_WORKERS: Final[int] = 10
 
+_KB: Final[int] = 1024
+
 BUSY_USAGE_THRESHOLD_CPU: Final[float] = 5  # percent in range [0, 100]
-BUSY_USAGE_THRESHOLD_DISK_READ: Final[int] = 512 * 1000  # in bytes
-BUSY_USAGE_THRESHOLD_DISK_WRITE: Final[int] = 512 * 1000  # in bytes
-BUSY_USAGE_THRESHOLD_NETWORK_RECEIVED: Final[int] = 0  # in bytes
-BUSY_USAGE_THRESHOLD_NETWORK_SENT: Final[int] = 0  # in bytes
+BUSY_USAGE_THRESHOLD_DISK_READ: Final[int] = 512 * _KB
+BUSY_USAGE_THRESHOLD_DISK_WRITE: Final[int] = 512 * _KB
+BUSY_USAGE_THRESHOLD_NETWORK_RECEIVED: Final[int] = 1 * _KB
+BUSY_USAGE_THRESHOLD_NETWORK_SENT: Final[int] = 1 * _KB
 
 
 # Utilities
