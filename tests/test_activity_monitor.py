@@ -99,7 +99,8 @@ async def test_disk_usage_monitor_not_busy(
             stop=stop_after_delay(5), wait=wait_fixed(0.1), reraise=True
         ):
             with attempt:
-                read_bytes, write_bytes = disk_usage_monitor.get_total_disk_usage()
+                read_bytes = disk_usage_monitor.total_bytes_read
+                write_bytes = disk_usage_monitor.total_bytes_write
                 assert read_bytes == 0
                 assert write_bytes == 0
                 assert disk_usage_monitor.is_busy is False
@@ -118,7 +119,7 @@ async def test_disk_usage_monitor_still_busy(
     ) as disk_usage_monitor:
         # wait for monitor to trigger
         await asyncio.sleep(1)
-        _, write_bytes = disk_usage_monitor.get_total_disk_usage()
+        write_bytes = disk_usage_monitor.total_bytes_write
         # NOTE: due to os disk cache reading is not reliable not testing it
         assert write_bytes > 0
 

@@ -2,6 +2,7 @@
 
 
 import asyncio
+import logging
 import json
 import psutil
 import requests
@@ -14,6 +15,9 @@ from contextlib import suppress
 from datetime import datetime
 from typing import Final, TypeAlias
 from abc import abstractmethod
+
+
+_logger = logging.getLogger(__name__)
 
 
 LISTEN_PORT: Final[int] = 19597
@@ -47,8 +51,10 @@ class AbstractIsBusyMonitor:
 
     def _worker(self) -> None:
         while self._keep_running:
-            with suppress(Exception):
+            try:
                 self.is_busy = self._check_if_busy()
+            except Exception as e:
+                _logger.exception("Failed to check if busy")
             time.sleep(self._poll_interval)
 
     def start(self) -> None:
@@ -103,12 +109,13 @@ class JupyterKernelMonitor(AbstractIsBusyMonitor):
 
     def __init__(self, poll_interval: float) -> None:
         super().__init__(poll_interval=poll_interval)
+        self.are_kernels_busy: bool = False
 
     def _get(self, path: str) -> dict:
         r = requests.get(f"{self.BASE_URL}{path}", headers=self.HEADERS)
         return r.json()
 
-    def _are_kernels_busy(self) -> bool:
+    def _update_kernels_activity(self) -> None:
         json_response = self._get("/api/kernels")
 
         are_kernels_busy = False
@@ -120,10 +127,11 @@ class JupyterKernelMonitor(AbstractIsBusyMonitor):
             if kernel_info["execution_state"] != "idle":
                 are_kernels_busy = True
 
-        return are_kernels_busy
+        self.are_kernels_busy = are_kernels_busy
 
     def _check_if_busy(self) -> bool:
-        return self._are_kernels_busy()
+        self._update_kernels_activity()
+        return self.are_kernels_busy
 
 
 ProcessID: TypeAlias = int
@@ -132,7 +140,9 @@ PercentCPU: TypeAlias = float
 
 
 class CPUUsageMonitor(AbstractIsBusyMonitor):
-    CPU_USAGE_MONITORING_INTERVAL_S: Final[float] = 1
+    """At regular intervals computes the total CPU usage
+    and averages over 1 second.
+    """
 
     def __init__(self, poll_interval: float, *, busy_threshold: float):
         super().__init__(poll_interval=poll_interval)
@@ -142,11 +152,13 @@ class CPUUsageMonitor(AbstractIsBusyMonitor):
         self._last_sample: dict[ProcessID, tuple[TimeSeconds, PercentCPU]] = (
             self._sample_total_cpu_usage()
         )
+        self.total_cpu_usage: float = 0
 
+    @staticmethod
     def _sample_cpu_usage(
-        self, process: psutil.Process
+        process: psutil.Process,
     ) -> tuple[ProcessID, tuple[TimeSeconds, PercentCPU]]:
-        # returns a tuple[pid, tuple[time, percent_cpu_usage]]
+        """returns: tuple[pid, tuple[time, percent_cpu_usage]]"""
         return (process.pid, (time.time(), process.cpu_percent()))
 
     def _sample_total_cpu_usage(
@@ -159,7 +171,7 @@ class CPUUsageMonitor(AbstractIsBusyMonitor):
         return dict([f.result() for f in as_completed(futures)])
 
     @staticmethod
-    def get_cpu_over_1_second(
+    def _get_cpu_over_1_second(
         last: tuple[TimeSeconds, PercentCPU], current: tuple[TimeSeconds, PercentCPU]
     ) -> float:
         interval = current[0] - last[0]
@@ -167,7 +179,7 @@ class CPUUsageMonitor(AbstractIsBusyMonitor):
         # cpu_over_1_second[%] = 1[s] * measured_cpu_in_interval[%] / interval[s]
         return measured_cpu_in_interval / interval
 
-    def get_total_cpu_usage_over_1_second(self) -> float:
+    def _update_total_cpu_usage(self) -> None:
         current_sample = self._sample_total_cpu_usage()
 
         total_cpu: float = 0
@@ -176,20 +188,24 @@ class CPUUsageMonitor(AbstractIsBusyMonitor):
                 continue  # skip if not found
 
             last_time_and_cpu_usage = self._last_sample[pid]
-            total_cpu += self.get_cpu_over_1_second(
+            total_cpu += self._get_cpu_over_1_second(
                 last_time_and_cpu_usage, time_and_cpu_usage
             )
 
         self._last_sample = current_sample  # replace
-        return total_cpu
+
+        self.total_cpu_usage = total_cpu
 
     def _check_if_busy(self) -> bool:
-        return self.get_total_cpu_usage_over_1_second() > self.busy_threshold
+        self._update_total_cpu_usage()
+        return self.total_cpu_usage > self.busy_threshold
+
+
+BytesRead: TypeAlias = int
+BytesWrite: TypeAlias = int
 
 
 class DiskUsageMonitor(AbstractIsBusyMonitor):
-    DISK_USAGE_MONITORING_INTERVAL_S: Final[float] = 1
-
     def __init__(
         self,
         poll_interval: float,
@@ -200,52 +216,74 @@ class DiskUsageMonitor(AbstractIsBusyMonitor):
         super().__init__(poll_interval=poll_interval)
         self.read_usage_threshold = read_usage_threshold
         self.write_usage_threshold = write_usage_threshold
-        self.executor = ThreadPoolExecutor(max_workers=THREAD_EXECUTOR_WORKERS)
 
-    # TODO: can we refactor these to take advantage of the internal sleep?
-    # and then report partial counters instead of doing it like it is now
-    def _get_process_disk_usage(self, proc: psutil.Process) -> tuple[int, int]:
-        # between the two calls it can fail!
-        # rewrite to make it better!
-        # store previous counters -> measure and update again
-        io_start = proc.io_counters()
-        time.sleep(self.DISK_USAGE_MONITORING_INTERVAL_S)
-        io_end = proc.io_counters()
+        self._last_sample: dict[
+            ProcessID, tuple[TimeSeconds, BytesRead, BytesWrite]
+        ] = self._sample_total_disk_usage()
 
-        # Calculate the differences
-        read_bytes = io_end.read_bytes - io_start.read_bytes
-        write_bytes = io_end.write_bytes - io_start.write_bytes
-        return read_bytes, write_bytes
+        self.total_bytes_read: int = 0
+        self.total_bytes_write: int = 0
 
-    def get_total_disk_usage(self) -> tuple[int, int]:
+    @staticmethod
+    def _sample_disk_usage(
+        process: psutil.Process,
+    ) -> tuple[ProcessID, tuple[TimeSeconds, BytesRead, BytesWrite]]:
+        counters = process.io_counters()
+        return (process.pid, (time.time(), counters.read_bytes, counters.write_bytes))
+
+    def _sample_total_disk_usage(
+        self,
+    ) -> dict[ProcessID, tuple[TimeSeconds, BytesRead, BytesWrite]]:
         futures = [
-            self.thread_executor.submit(self._get_process_disk_usage, x)
-            for x in _get_sibling_processes()
+            self.thread_executor.submit(self._sample_disk_usage, p)
+            for p in _get_sibling_processes()
         ]
+        return dict([f.result() for f in as_completed(futures)])
 
-        disk_usage: list[tuple[int, int]] = [
-            future.result() for future in as_completed(futures)
-        ]
-        read_bytes: int = 0
-        write_bytes: int = 0
-        for read, write in disk_usage:
-            read_bytes += read
-            write_bytes += write
+    @staticmethod
+    def _get_bytes_over_one_second(
+        last: tuple[TimeSeconds, BytesRead, BytesWrite],
+        current: tuple[TimeSeconds, BytesRead, BytesWrite],
+    ) -> tuple[BytesRead, BytesWrite]:
+        interval = current[0] - last[0]
+        measured_bytes_read_in_interval = current[1]
+        measured_bytes_write_in_interval = current[2]
 
-        return read_bytes, write_bytes
+        # bytes_*_1_second[%] = 1[s] * measured_bytes_*_in_interval[%] / interval[s]
+        bytes_read_over_1_second = int(measured_bytes_read_in_interval / interval)
+        bytes_write_over_1_second = int(measured_bytes_write_in_interval / interval)
+        return bytes_read_over_1_second, bytes_write_over_1_second
+
+    def _update_total_disk_usage(self) -> None:
+        current_sample = self._sample_total_disk_usage()
+
+        total_bytes_read: int = 0
+        total_bytes_write: int = 0
+        for pid, time_and_disk_usage in current_sample.items():
+            if pid not in self._last_sample:
+                continue  # skip if not found
+
+            last_time_and_disk_usage = self._last_sample[pid]
+
+            bytes_read, bytes_write = self._get_bytes_over_one_second(
+                last_time_and_disk_usage, time_and_disk_usage
+            )
+            total_bytes_read += bytes_read
+            total_bytes_write += bytes_write
+
+        self._last_sample = current_sample  # replace
+
+        self.total_bytes_read = total_bytes_read
+        self.total_bytes_write = total_bytes_write
 
     def _check_if_busy(self) -> bool:
-        read_bytes, write_bytes = self.get_total_disk_usage()
+        self._update_total_disk_usage()
         return (
-            read_bytes > self.read_usage_threshold
-            or write_bytes > self.write_usage_threshold
+            self.total_bytes_read > self.read_usage_threshold
+            or self.total_bytes_write > self.write_usage_threshold
         )
 
 
-class NetworkUsageMonitor(AbstractIsBusyMonitor):
-    NETWORK_USAGE_MONITORING_INTERVAL_S: Final[float] = 1
-
-    # Measure at regular intervals (is busy calls)
 
 
 class ActivityManager:
@@ -255,7 +293,9 @@ class ActivityManager:
 
         self.jupyter_kernel_monitor = JupyterKernelMonitor(CHECK_INTERVAL_S)
         self.cpu_usage_monitor = CPUUsageMonitor(
-            CHECK_INTERVAL_S, busy_threshold=BUSY_USAGE_THRESHOLD_CPU
+            # TODO: interval could be 1 second now
+            CHECK_INTERVAL_S,
+            busy_threshold=BUSY_USAGE_THRESHOLD_CPU,
         )
         self.disk_usage_monitor = DiskUsageMonitor(
             CHECK_INTERVAL_S,
@@ -305,11 +345,14 @@ class DebugHandler(tornado.web.RequestHandler):
                     "seconds_inactive": self.activity_manager.get_idle_seconds(),
                     "cpu_usage": {
                         "is_busy": self.activity_manager.cpu_usage_monitor.is_busy,
-                        "total": self.activity_manager.cpu_usage_monitor.get_total_cpu_usage_over_1_second(),
+                        "total": self.activity_manager.cpu_usage_monitor.total_cpu_usage,
                     },
                     "disk_usage": {
                         "is_busy": self.activity_manager.disk_usage_monitor.is_busy,
-                        "total": self.activity_manager.disk_usage_monitor.get_total_disk_usage(),
+                        "total": {
+                            "bytes_read": self.activity_manager.disk_usage_monitor.total_bytes_read,
+                            "bytes_write": self.activity_manager.disk_usage_monitor.total_bytes_write,
+                        },
                     },
                     "kernel_monitor": {
                         "is_busy": self.activity_manager.jupyter_kernel_monitor.is_busy
