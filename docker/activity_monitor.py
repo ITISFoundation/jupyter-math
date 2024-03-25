@@ -63,7 +63,11 @@ class AbstractIsBusyMonitor:
             time.sleep(self._poll_interval)
 
     def start(self) -> None:
-        self._thread = Thread(target=self._worker, daemon=True)
+        self._thread = Thread(
+            target=self._worker,
+            daemon=True,
+            name=f"{self.__class__.__name__}_check_busy",
+        )
         self._thread.start()
 
     def stop(self) -> None:
@@ -370,6 +374,9 @@ class NetworkUsageMonitor(AbstractIsBusyMonitor):
 
 class ActivityManager:
     def __init__(self, interval: float) -> None:
+        self._keep_running: bool = True
+        self._thread: Thread | None = None
+
         self.interval = interval
         self.last_idle: datetime | None = None
 
@@ -410,15 +417,33 @@ class ActivityManager:
         idle_seconds = (datetime.utcnow() - self.last_idle).total_seconds()
         return idle_seconds if idle_seconds > 0 else 0
 
-    async def run(self):
+    def _worker(self) -> None:
+        while self._keep_running:
+            with suppress(Exception):
+                self.check()
+            time.sleep(self.interval)
+
+    def start(self) -> None:
         self.jupyter_kernel_monitor.start()
         self.cpu_usage_monitor.start()
         self.disk_usage_monitor.start()
         self.network_monitor.start()
-        while True:
-            with suppress(Exception):
-                self.check()
-            await asyncio.sleep(self.interval)
+
+        self._thread = Thread(
+            target=self._worker,
+            daemon=True,
+            name=f"{self.__class__.__name__}_check_busy",
+        )
+        self._thread.start()
+
+    def stop(self) -> None:
+        self.jupyter_kernel_monitor.stop()
+        self.cpu_usage_monitor.stop()
+        self.disk_usage_monitor.stop()
+        self.network_monitor.stop()
+
+        self._keep_running = False
+        self._thread.join()
 
 
 class DebugHandler(tornado.web.RequestHandler):
@@ -470,13 +495,13 @@ class MainHandler(tornado.web.RequestHandler):
 
 async def make_app() -> tornado.web.Application:
     activity_manager = ActivityManager(CHECK_INTERVAL_S)
+    activity_manager.start()
     app = tornado.web.Application(
         [
             (r"/", MainHandler, {"activity_manager": activity_manager}),
             (r"/debug", DebugHandler, {"activity_manager": activity_manager}),
         ]
     )
-    asyncio.create_task(activity_manager.run())
     return app
 
 
