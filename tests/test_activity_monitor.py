@@ -11,7 +11,7 @@ import requests
 import requests_mock
 
 from queue import Queue
-from typing import Callable, Iterable, TYPE_CHECKING
+from typing import Callable, Final, Iterable, TYPE_CHECKING
 from pytest_mock import MockFixture
 from tenacity import AsyncRetrying
 from tenacity.stop import stop_after_delay
@@ -127,6 +127,52 @@ async def test_disk_usage_monitor_still_busy(
         assert disk_usage_monitor.is_busy is True
 
 
+async def test_network_usage_monitor_not_busy(
+    socket_server: None,
+    mock__get_sibling_processes: Callable[[list[int]], list[psutil.Process]],
+    create_activity_generator: Callable[[bool, bool, bool], _ActivityGenerator],
+):
+    activity_generator = create_activity_generator(network=False, cpu=False, disk=False)
+    mock__get_sibling_processes([activity_generator.get_pid()])
+
+    with activity_monitor.NetworkUsageMonitor(
+        0.5, received_usage_threshold=0, sent_usage_threshold=0
+    ) as network_usage_monitor:
+        async for attempt in AsyncRetrying(
+            stop=stop_after_delay(5), wait=wait_fixed(0.1), reraise=True
+        ):
+            with attempt:
+                assert network_usage_monitor.bytes_received == 0
+                assert network_usage_monitor.bytes_sent == 0
+                assert network_usage_monitor.is_busy is False
+
+
+@pytest.fixture
+def mock_network_monitor_exclude_interfaces(mocker: MockFixture) -> None:
+    mocker.patch("activity_monitor.NetworkUsageMonitor._EXCLUDE_INTERFACES", new=set())
+    assert activity_monitor.NetworkUsageMonitor._EXCLUDE_INTERFACES == set()
+
+
+async def test_network_usage_monitor_still_busy(
+    mock_network_monitor_exclude_interfaces: None,
+    socket_server: None,
+    mock__get_sibling_processes: Callable[[list[int]], list[psutil.Process]],
+    create_activity_generator: Callable[[bool, bool, bool], _ActivityGenerator],
+):
+    activity_generator = create_activity_generator(network=True, cpu=False, disk=False)
+    mock__get_sibling_processes([activity_generator.get_pid()])
+
+    with activity_monitor.NetworkUsageMonitor(
+        0.5, received_usage_threshold=0, sent_usage_threshold=0
+    ) as network_usage_monitor:
+        # wait for monitor to trigger
+        await asyncio.sleep(1)
+
+        assert network_usage_monitor.bytes_received > 0
+        assert network_usage_monitor.bytes_sent > 0
+        assert network_usage_monitor.is_busy is True
+
+
 @pytest.fixture
 def mock_jupyter_kernel_monitor(are_kernels_busy: bool) -> Iterable[None]:
     with requests_mock.Mocker(real_http=True) as m:
@@ -199,23 +245,29 @@ async def tornado_server(mock_jupyter_kernel_monitor: None, server_url: str) -> 
         requests.get(f"{server_url}/", timeout=1)
 
 
-@pytest.fixture
-def mock_check_interval(mocker: MockFixture) -> None:
-    mocker.patch("activity_monitor.CHECK_INTERVAL_S", new=1)
-    assert activity_monitor.CHECK_INTERVAL_S == 1
-
-
 @pytest.mark.parametrize("are_kernels_busy", [False])
-async def test_tornado_server_ok(
-    mock_check_interval: None, tornado_server: None, server_url: str
-):
+async def test_tornado_server_ok(tornado_server: None, server_url: str):
     result = requests.get(f"{server_url}/", timeout=5)
     assert result.status_code == 200
 
 
+_BIG_THRESHOLD: Final[int] = int(1e10)
+
+
+@pytest.fixture
+def mock_activity_manager_config(mocker: MockFixture) -> None:
+    mocker.patch("activity_monitor.CHECK_INTERVAL_S", 1)
+    mocker.patch("activity_monitor.KERNEL_CHECK_INTERVAL_S", 1)
+
+    mocker.patch(
+        "activity_monitor.BUSY_USAGE_THRESHOLD_NETWORK_RECEIVED", _BIG_THRESHOLD
+    )
+    mocker.patch("activity_monitor.BUSY_USAGE_THRESHOLD_NETWORK_SENT", _BIG_THRESHOLD)
+
+
 @pytest.mark.parametrize("are_kernels_busy", [False])
 async def test_activity_monitor_becomes_not_busy(
-    mock_check_interval: None,
+    mock_activity_manager_config: None,
     socket_server: None,
     mock__get_sibling_processes: Callable[[list[int]], list[psutil.Process]],
     create_activity_generator: Callable[[bool, bool, bool], _ActivityGenerator],
@@ -236,6 +288,7 @@ async def test_activity_monitor_becomes_not_busy(
             assert debug_response["cpu_usage"]["is_busy"] is False
             assert debug_response["disk_usage"]["is_busy"] is False
             assert debug_response["kernel_monitor"]["is_busy"] is False
+            assert debug_response["network_usage"]["is_busy"] is False
 
             result = requests.get(f"{server_url}/", timeout=2)
             assert result.status_code == 200

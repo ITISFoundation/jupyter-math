@@ -22,12 +22,15 @@ _logger = logging.getLogger(__name__)
 
 LISTEN_PORT: Final[int] = 19597
 
-CHECK_INTERVAL_S: Final[float] = 5
+KERNEL_CHECK_INTERVAL_S: Final[float] = 5
+CHECK_INTERVAL_S: Final[float] = 1
 THREAD_EXECUTOR_WORKERS: Final[int] = 10
 
 BUSY_USAGE_THRESHOLD_CPU: Final[float] = 5  # percent in range [0, 100]
 BUSY_USAGE_THRESHOLD_DISK_READ: Final[int] = 0  # in bytes
 BUSY_USAGE_THRESHOLD_DISK_WRITE: Final[int] = 0  # in bytes
+BUSY_USAGE_THRESHOLD_NETWORK_RECEIVED: Final[int] = 0  # in bytes
+BUSY_USAGE_THRESHOLD_NETWORK_SENT: Final[int] = 0  # in bytes
 
 
 # Utilities
@@ -152,7 +155,7 @@ class CPUUsageMonitor(AbstractIsBusyMonitor):
         self._last_sample: dict[ProcessID, tuple[TimeSeconds, PercentCPU]] = (
             self._sample_total_cpu_usage()
         )
-        self.total_cpu_usage: float = 0
+        self.total_cpu_usage: PercentCPU = 0
 
     @staticmethod
     def _sample_cpu_usage(
@@ -210,8 +213,8 @@ class DiskUsageMonitor(AbstractIsBusyMonitor):
         self,
         poll_interval: float,
         *,
-        read_usage_threshold: float,
-        write_usage_threshold: float,
+        read_usage_threshold: int,
+        write_usage_threshold: int,
     ):
         super().__init__(poll_interval=poll_interval)
         self.read_usage_threshold = read_usage_threshold
@@ -221,8 +224,8 @@ class DiskUsageMonitor(AbstractIsBusyMonitor):
             ProcessID, tuple[TimeSeconds, BytesRead, BytesWrite]
         ] = self._sample_total_disk_usage()
 
-        self.total_bytes_read: int = 0
-        self.total_bytes_write: int = 0
+        self.total_bytes_read: BytesRead = 0
+        self.total_bytes_write: BytesWrite = 0
 
     @staticmethod
     def _sample_disk_usage(
@@ -284,6 +287,83 @@ class DiskUsageMonitor(AbstractIsBusyMonitor):
         )
 
 
+InterfaceName: TypeAlias = str
+BytesReceived: TypeAlias = int
+BytesSent: TypeAlias = int
+
+
+class NetworkUsageMonitor(AbstractIsBusyMonitor):
+    _EXCLUDE_INTERFACES: set[InterfaceName] = {
+        "lo",
+    }
+
+    def __init__(
+        self,
+        poll_interval: float,
+        *,
+        received_usage_threshold: int,
+        sent_usage_threshold: int,
+    ):
+        super().__init__(poll_interval=poll_interval)
+        self.received_usage_threshold = received_usage_threshold
+        self.sent_usage_threshold = sent_usage_threshold
+
+        self._last_sample: tuple[TimeSeconds, BytesReceived, BytesSent] = (
+            self._sample_total_network_usage()
+        )
+        self.bytes_received: BytesReceived = 0
+        self.bytes_sent: BytesSent = 0
+
+    def _sample_total_network_usage(
+        self,
+    ) -> tuple[TimeSeconds, BytesReceived, BytesSent]:
+        net_io_counters = psutil.net_io_counters(pernic=True)
+
+        total_bytes_received: int = 0
+        total_bytes_sent: int = 0
+        for nic, stats in net_io_counters.items():
+            if nic in self._EXCLUDE_INTERFACES:
+                continue
+
+            total_bytes_received += stats.bytes_recv
+            total_bytes_sent += stats.bytes_sent
+
+        return time.time(), total_bytes_received, total_bytes_sent
+
+    @staticmethod
+    def _get_bytes_over_one_second(
+        last: tuple[TimeSeconds, BytesReceived, BytesSent],
+        current: tuple[TimeSeconds, BytesReceived, BytesSent],
+    ) -> tuple[BytesReceived, BytesSent]:
+        interval = current[0] - last[0]
+        measured_bytes_received_in_interval = current[1] - last[1]
+        measured_bytes_sent_in_interval = current[2] - last[2]
+
+        # bytes_*_1_second[%] = 1[s] * measured_bytes_*_in_interval[%] / interval[s]
+        bytes_received_over_1_second = int(
+            measured_bytes_received_in_interval / interval
+        )
+        bytes_sent_over_1_second = int(measured_bytes_sent_in_interval / interval)
+        return bytes_received_over_1_second, bytes_sent_over_1_second
+
+    def _update_total_network_usage(self) -> None:
+        current_sample = self._sample_total_network_usage()
+
+        bytes_received, bytes_sent = self._get_bytes_over_one_second(
+            self._last_sample, current_sample
+        )
+
+        self._last_sample = current_sample  # replace
+
+        self.bytes_received = bytes_received
+        self.bytes_sent = bytes_sent
+
+    def _check_if_busy(self) -> bool:
+        self._update_total_network_usage()
+        return (
+            self.bytes_received > self.received_usage_threshold
+            or self.bytes_sent > self.sent_usage_threshold
+        )
 
 
 class ActivityManager:
@@ -291,9 +371,8 @@ class ActivityManager:
         self.interval = interval
         self.last_idle: datetime | None = None
 
-        self.jupyter_kernel_monitor = JupyterKernelMonitor(CHECK_INTERVAL_S)
+        self.jupyter_kernel_monitor = JupyterKernelMonitor(KERNEL_CHECK_INTERVAL_S)
         self.cpu_usage_monitor = CPUUsageMonitor(
-            # TODO: interval could be 1 second now
             CHECK_INTERVAL_S,
             busy_threshold=BUSY_USAGE_THRESHOLD_CPU,
         )
@@ -302,12 +381,18 @@ class ActivityManager:
             read_usage_threshold=BUSY_USAGE_THRESHOLD_DISK_READ,
             write_usage_threshold=BUSY_USAGE_THRESHOLD_DISK_WRITE,
         )
+        self.network_monitor = NetworkUsageMonitor(
+            CHECK_INTERVAL_S,
+            received_usage_threshold=BUSY_USAGE_THRESHOLD_NETWORK_RECEIVED,
+            sent_usage_threshold=BUSY_USAGE_THRESHOLD_NETWORK_SENT,
+        )
 
     def check(self):
         is_busy = (
             self.jupyter_kernel_monitor.is_busy
             or self.cpu_usage_monitor.is_busy
             or self.disk_usage_monitor.is_busy
+            or self.network_monitor.is_busy
         )
 
         if is_busy:
@@ -327,6 +412,7 @@ class ActivityManager:
         self.jupyter_kernel_monitor.start()
         self.cpu_usage_monitor.start()
         self.disk_usage_monitor.start()
+        self.network_monitor.start()
         while True:
             with suppress(Exception):
                 self.check()
@@ -350,8 +436,15 @@ class DebugHandler(tornado.web.RequestHandler):
                     "disk_usage": {
                         "is_busy": self.activity_manager.disk_usage_monitor.is_busy,
                         "total": {
-                            "bytes_read": self.activity_manager.disk_usage_monitor.total_bytes_read,
-                            "bytes_write": self.activity_manager.disk_usage_monitor.total_bytes_write,
+                            "bytes_read_per_second": self.activity_manager.disk_usage_monitor.total_bytes_read,
+                            "bytes_write_per_second": self.activity_manager.disk_usage_monitor.total_bytes_write,
+                        },
+                    },
+                    "network_usage": {
+                        "is_busy": self.activity_manager.network_monitor.is_busy,
+                        "total": {
+                            "bytes_received_per_second": self.activity_manager.network_monitor.bytes_received,
+                            "bytes_sent_per_second": self.activity_manager.network_monitor.bytes_sent,
                         },
                     },
                     "kernel_monitor": {
