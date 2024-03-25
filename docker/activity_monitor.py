@@ -1,20 +1,19 @@
 #!/home/jovyan/.venv/bin/python
 
 
-import asyncio
-import logging
 import json
+import logging
 import psutil
 import requests
-import tornado
 import time
 
-from threading import Thread
+from abc import abstractmethod
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from contextlib import suppress
 from datetime import datetime
+from http.server import HTTPServer, BaseHTTPRequestHandler
+from threading import Thread
 from typing import Final
-from abc import abstractmethod
 
 
 _logger = logging.getLogger(__name__)
@@ -446,70 +445,78 @@ class ActivityManager:
         self._thread.join()
 
 
-class DebugHandler(tornado.web.RequestHandler):
-    def initialize(self, activity_manager: ActivityManager):
-        self.activity_manager: ActivityManager = activity_manager
+def _get_response_debug(activity_manager: ActivityManager) -> dict:
+    return {
+        "seconds_inactive": activity_manager.get_idle_seconds(),
+        "cpu_usage": {
+            "is_busy": activity_manager.cpu_usage_monitor.is_busy,
+            "total": activity_manager.cpu_usage_monitor.total_cpu_usage,
+        },
+        "disk_usage": {
+            "is_busy": activity_manager.disk_usage_monitor.is_busy,
+            "total": {
+                "bytes_read_per_second": activity_manager.disk_usage_monitor.total_bytes_read,
+                "bytes_write_per_second": activity_manager.disk_usage_monitor.total_bytes_write,
+            },
+        },
+        "network_usage": {
+            "is_busy": activity_manager.network_monitor.is_busy,
+            "total": {
+                "bytes_received_per_second": activity_manager.network_monitor.bytes_received,
+                "bytes_sent_per_second": activity_manager.network_monitor.bytes_sent,
+            },
+        },
+        "kernel_monitor": {"is_busy": activity_manager.jupyter_kernel_monitor.is_busy},
+    }
 
-    async def get(self):
-        assert self.activity_manager
-        self.write(
-            json.dumps(
-                {
-                    "seconds_inactive": self.activity_manager.get_idle_seconds(),
-                    "cpu_usage": {
-                        "is_busy": self.activity_manager.cpu_usage_monitor.is_busy,
-                        "total": self.activity_manager.cpu_usage_monitor.total_cpu_usage,
-                    },
-                    "disk_usage": {
-                        "is_busy": self.activity_manager.disk_usage_monitor.is_busy,
-                        "total": {
-                            "bytes_read_per_second": self.activity_manager.disk_usage_monitor.total_bytes_read,
-                            "bytes_write_per_second": self.activity_manager.disk_usage_monitor.total_bytes_write,
-                        },
-                    },
-                    "network_usage": {
-                        "is_busy": self.activity_manager.network_monitor.is_busy,
-                        "total": {
-                            "bytes_received_per_second": self.activity_manager.network_monitor.bytes_received,
-                            "bytes_sent_per_second": self.activity_manager.network_monitor.bytes_sent,
-                        },
-                    },
-                    "kernel_monitor": {
-                        "is_busy": self.activity_manager.jupyter_kernel_monitor.is_busy
-                    },
-                }
+
+def _get_response_root(activity_manager: ActivityManager) -> dict:
+    return {"seconds_inactive": activity_manager.get_idle_seconds()}
+
+
+class ServerState:
+    pass
+
+
+class HTTPServerWithState(HTTPServer):
+    def __init__(self, server_address, RequestHandlerClass, state):
+        self.state = state  # application's state
+        super().__init__(server_address, RequestHandlerClass)
+
+
+class JSONRequestHandler(BaseHTTPRequestHandler):
+    def _send_response(self, code: int, data: dict) -> None:
+        self.send_response(code)
+        self.send_header("Content-type", "application/json")
+        self.end_headers()
+        self.wfile.write(json.dumps(data).encode("utf-8"))
+
+    def do_GET(self):
+        state = self.server.state
+
+        if self.path == "/":  # The root endpoint
+            self._send_response(200, _get_response_root(state.activity_manager))
+        elif self.path == "/debug":  # The debug endpoint
+            self._send_response(200, _get_response_debug(state.activity_manager))
+        else:  # Handle case where the endpoint is not found
+            self._send_response(
+                404, _get_response_debug({"error": "Resource not found"})
             )
-        )
 
 
-class MainHandler(tornado.web.RequestHandler):
-    def initialize(self, activity_manager: ActivityManager):
-        self.activity_manager: ActivityManager = activity_manager
+def make_server(port: int) -> HTTPServerWithState:
+    state = ServerState()
+    state.activity_manager = ActivityManager(CHECK_INTERVAL_S)
+    state.activity_manager.start()
 
-    async def get(self):
-        assert self.activity_manager
-        self.write(
-            json.dumps({"seconds_inactive": self.activity_manager.get_idle_seconds()})
-        )
+    server_address = ("", port)  # Listen on all interfaces, port 8000
+    return HTTPServerWithState(server_address, JSONRequestHandler, state)
 
 
-async def make_app() -> tornado.web.Application:
-    activity_manager = ActivityManager(CHECK_INTERVAL_S)
-    activity_manager.start()
-    app = tornado.web.Application(
-        [
-            (r"/", MainHandler, {"activity_manager": activity_manager}),
-            (r"/debug", DebugHandler, {"activity_manager": activity_manager}),
-        ]
-    )
-    return app
-
-
-async def main():
-    app = await make_app()
-    app.listen(19597)
-    await asyncio.Event().wait()
+def main():
+    http_server = make_server(LISTEN_PORT)
+    http_server.serve_forever()
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    main()

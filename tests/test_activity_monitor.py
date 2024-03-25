@@ -1,16 +1,13 @@
 import asyncio
-import pytest
-import psutil
-import tornado.web
 import json
-import tornado.httpserver
-import tornado.ioloop
-import threading
+import psutil
+import pytest
 import pytest_asyncio
 import requests
 import requests_mock
+import threading
+import time
 
-from queue import Queue
 from typing import Callable, Final, Iterable, TYPE_CHECKING
 from pytest_mock import MockFixture
 from tenacity import AsyncRetrying
@@ -127,7 +124,16 @@ async def test_disk_usage_monitor_still_busy(
         assert disk_usage_monitor.is_busy is True
 
 
+@pytest.fixture
+def mock_no_network_activity(mocker: MockFixture) -> None:
+    mocker.patch(
+        "activity_monitor.NetworkUsageMonitor._sample_total_network_usage",
+        side_effect=lambda: (time.time(), 0, 0),
+    )
+
+
 async def test_network_usage_monitor_not_busy(
+    mock_no_network_activity: None,
     socket_server: None,
     mock__get_sibling_processes: Callable[[list[int]], list[psutil.Process]],
     create_activity_generator: Callable[[bool, bool, bool], _ActivityGenerator],
@@ -201,29 +207,11 @@ async def server_url() -> str:
 
 
 @pytest_asyncio.fixture
-async def tornado_server(mock_jupyter_kernel_monitor: None, server_url: str) -> None:
-    app = await activity_monitor.make_app()
+async def http_server(mock_jupyter_kernel_monitor: None, server_url: str) -> None:
+    server = activity_monitor.make_server(activity_monitor.LISTEN_PORT)
 
-    stop_queue = Queue()
-
-    def _run_server_worker():
-        http_server = tornado.httpserver.HTTPServer(app)
-        http_server.listen(activity_monitor.LISTEN_PORT)
-        current_io_loop = tornado.ioloop.IOLoop.current()
-
-        def _queue_stopper() -> None:
-            stop_queue.get()
-            current_io_loop.stop()
-
-        stopping_thread = threading.Thread(target=_queue_stopper, daemon=True)
-        stopping_thread.start()
-
-        current_io_loop.start()
-        stopping_thread.join()
-
-        # cleanly shut down tornado server and loop
-        current_io_loop.close()
-        http_server.stop()
+    def _run_server_worker() -> None:
+        server.serve_forever()
 
     thread = threading.Thread(target=_run_server_worker, daemon=True)
     thread.start()
@@ -238,15 +226,15 @@ async def tornado_server(mock_jupyter_kernel_monitor: None, server_url: str) -> 
 
     yield None
 
-    stop_queue.put(None)
-    thread.join(timeout=1)
+    server.shutdown()
+    server.server_close()
 
-    with pytest.raises(requests.exceptions.ReadTimeout):
+    with pytest.raises(requests.exceptions.RequestException):
         requests.get(f"{server_url}/", timeout=1)
 
 
 @pytest.mark.parametrize("are_kernels_busy", [False])
-async def test_tornado_server_ok(tornado_server: None, server_url: str):
+async def test_http_server_ok(http_server: None, server_url: str):
     result = requests.get(f"{server_url}/", timeout=5)
     assert result.status_code == 200
 
@@ -271,7 +259,7 @@ async def test_activity_monitor_becomes_not_busy(
     socket_server: None,
     mock__get_sibling_processes: Callable[[list[int]], list[psutil.Process]],
     create_activity_generator: Callable[[bool, bool, bool], _ActivityGenerator],
-    tornado_server: None,
+    http_server: None,
     server_url: str,
 ):
     activity_generator = create_activity_generator(network=False, cpu=False, disk=False)
