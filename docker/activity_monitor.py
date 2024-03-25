@@ -13,7 +13,7 @@ from threading import Thread
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from contextlib import suppress
 from datetime import datetime
-from typing import Final, TypeAlias
+from typing import Final
 from abc import abstractmethod
 
 
@@ -27,8 +27,8 @@ CHECK_INTERVAL_S: Final[float] = 1
 THREAD_EXECUTOR_WORKERS: Final[int] = 10
 
 BUSY_USAGE_THRESHOLD_CPU: Final[float] = 5  # percent in range [0, 100]
-BUSY_USAGE_THRESHOLD_DISK_READ: Final[int] = 0  # in bytes
-BUSY_USAGE_THRESHOLD_DISK_WRITE: Final[int] = 0  # in bytes
+BUSY_USAGE_THRESHOLD_DISK_READ: Final[int] = 512 * 1000  # in bytes
+BUSY_USAGE_THRESHOLD_DISK_WRITE: Final[int] = 512 * 1000  # in bytes
 BUSY_USAGE_THRESHOLD_NETWORK_RECEIVED: Final[int] = 0  # in bytes
 BUSY_USAGE_THRESHOLD_NETWORK_SENT: Final[int] = 0  # in bytes
 
@@ -137,9 +137,9 @@ class JupyterKernelMonitor(AbstractIsBusyMonitor):
         return self.are_kernels_busy
 
 
-ProcessID: TypeAlias = int
-TimeSeconds: TypeAlias = float
-PercentCPU: TypeAlias = float
+ProcessID = int
+TimeSeconds = float
+PercentCPU = float
 
 
 class CPUUsageMonitor(AbstractIsBusyMonitor):
@@ -204,8 +204,8 @@ class CPUUsageMonitor(AbstractIsBusyMonitor):
         return self.total_cpu_usage > self.busy_threshold
 
 
-BytesRead: TypeAlias = int
-BytesWrite: TypeAlias = int
+BytesRead = int
+BytesWrite = int
 
 
 class DiskUsageMonitor(AbstractIsBusyMonitor):
@@ -287,9 +287,9 @@ class DiskUsageMonitor(AbstractIsBusyMonitor):
         )
 
 
-InterfaceName: TypeAlias = str
-BytesReceived: TypeAlias = int
-BytesSent: TypeAlias = int
+InterfaceName = str
+BytesReceived = int
+BytesSent = int
 
 
 class NetworkUsageMonitor(AbstractIsBusyMonitor):
