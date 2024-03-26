@@ -92,8 +92,26 @@ ENV JP_LSP_VIRTUAL_DIR="/home/${NB_USER}/.virtual_documents"
 # Copying boot scripts
 COPY --chown=$NB_UID:$NB_GID docker /docker
 
-RUN chmod +x /docker/activity.py \
-  && chmod +x /docker/activity_monitor.py
+# install service activity monitor
+ARG ACTIVITY_MONITOR_VERSION=v0.0.1
+
+# Detection thresholds for application
+ENV ACTIVITY_MONITOR_BUSY_THRESHOLD_CPU_PERCENT=0.5
+ENV ACTIVITY_MONITOR_BUSY_THRESHOLD_DISK_READ_BPS=0
+ENV ACTIVITY_MONITOR_BUSY_THRESHOLD_DISK_WRITE_BPS=0
+ENV ACTIVITY_MONITOR_BUSY_THRESHOLD_NETWORK_RECEIVE_BPS=1024
+ENV ACTIVITY_MONITOR_BUSY_THRESHOLD_NETWORK_SENT_BPS=1024
+
+# install service activity monitor
+RUN apt-get update && \
+  apt-get install -y curl && \
+  # install using curl
+  curl -sSL https://raw.githubusercontent.com/ITISFoundation/service-activity-monitor/main/scripts/install.sh | \
+  bash -s -- ${ACTIVITY_MONITOR_VERSION} && \
+  # cleanup and remove curl
+  apt-get purge -y --auto-remove curl && \
+  rm -rf /var/lib/apt/lists/*
+
 
 RUN echo 'export PATH="/home/${NB_USER}/.venv/bin:$PATH"' >> "/home/${NB_USER}/.bashrc"
 

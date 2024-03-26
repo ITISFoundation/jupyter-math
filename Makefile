@@ -67,18 +67,6 @@ publish-local: ## push to local throw away registry to test integration
 	docker push registry:5000/simcore/services/dynamic/$(DOCKER_IMAGE_NAME):$(DOCKER_IMAGE_TAG)
 	@curl registry:5000/v2/_catalog | jq
 
-.PHONY: install-test
-install-test:	## install dependencies for testing
-	pip install -r requirements/test.txt
-
-.PHONY: tests-dev
-tests-dev:	## run tests in development mode
-	.venv/bin/pytest --pdb -vvv tests
-
-.PHONY: tests-ci
-tests-ci:	## run testds in the CI
-	.venv/bin/pytest -vvv --color=yes --cov-report term --cov=activity_monitor tests 
-
 .PHONY: help
 help: ## this colorful help
 	@echo "Recipes for '$(notdir $(CURDIR))':"

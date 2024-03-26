@@ -29,15 +29,6 @@ If you already have a local copy of **o<sup>2</sup>S<sup>2</sup>PARC** running a
 make publish-local
 ```
 
-Setup for test development locally:
-
-```shell
-make devenv
-source .venv/bin/activate
-make tests-dev
-```
-
-
 ### Testing manually
 After a new service version has been published on the master deployment, it can be manually tested. For example a Template, called "Test Jupyter-math 2.0.9 ipywidgets" can be used for internal testing on the master deployment.
 
