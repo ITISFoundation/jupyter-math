@@ -102,6 +102,8 @@ ENV ACTIVITY_MONITOR_BUSY_THRESHOLD_DISK_WRITE_BPS=0
 ENV ACTIVITY_MONITOR_BUSY_THRESHOLD_NETWORK_RECEIVE_BPS=1024
 ENV ACTIVITY_MONITOR_BUSY_THRESHOLD_NETWORK_SENT_BPS=1024
 
+# TODO: above values require some tewaking otherwise this will always be considered in use
+
 # install service activity monitor
 RUN apt-get update && \
   apt-get install -y curl && \
