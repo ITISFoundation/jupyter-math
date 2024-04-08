@@ -18,3 +18,8 @@ paths-mapping:
   outputs_path: /home/jovyan/work/outputs
   state_paths:
     - /home/jovyan/work/workspace
+callbacks-mapping:
+  inactivity:
+    service: container
+    command: ["python", "/usr/local/bin/service-monitor/activity.py"]
+    timeout: 1
