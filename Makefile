@@ -29,7 +29,6 @@ devenv: .venv  ## create a python virtual environment with tools to dev, run and
 requirements: devenv ## runs pip-tools to build requirements.txt that will be installed in the JupyterLab
 	# freezes requirements
 	pip-compile kernels/python-maths/requirements.in --resolver=backtracking --output-file kernels/python-maths/requirements.txt
-	pip-compile requirements/test.in --resolver=backtracking --output-file requirements/test.txt
 
 # Builds new service version ----------------------------------------------------------------------------
 define _bumpversion
