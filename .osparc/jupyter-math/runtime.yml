@@ -23,3 +23,9 @@ callbacks-mapping:
     service: container
     command: ["python", "/usr/local/bin/service-monitor/activity.py"]
     timeout: 1
+compose-spec:                                                                                                                                       
+  services:                                                                                                                                         
+    jupyter-math:                                                                                                                                     
+      environment:                                                                                                                                  
+        - OSPARC_API_KEY=$${OSPARC_VARIABLE_API_KEY}                                                                                                
+        - OSPARC_API_SECRET=$${OSPARC_VARIABLE_API_SECRET}     
