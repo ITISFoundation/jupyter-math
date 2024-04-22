@@ -23,3 +23,13 @@ callbacks-mapping:
     service: container
     command: ["python", "/usr/local/bin/service-monitor/activity.py"]
     timeout: 1
+compose-spec:                                                                                                                                       
+  version: "3.7"    
+  services:                                                                                                                                         
+    jupyter-math:
+      image: $${SIMCORE_REGISTRY}/simcore/services/dynamic/jupyter-math:$${SERVICE_VERSION}  
+      environment:                                                                                                                                  
+        - OSPARC_API_HOST=$${OSPARC_VARIABLE_API_HOST}                                                                                                
+        - OSPARC_API_KEY=$${OSPARC_VARIABLE_API_KEY}                                                                                                
+        - OSPARC_API_SECRET=$${OSPARC_VARIABLE_API_SECRET}
+container-http-entrypoint: jupyter-math
