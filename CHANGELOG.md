@@ -1,11 +1,11 @@
 # Changelog
 
 ## [3.0.2] - 2024-02-02
-- Allows users to use OSPARC_API_HOST / OSPARC_API_KEY / OSPARC_API_SECRET in notebooks to access the API.
+- Allows users to use OSPARC_API_HOST / OSPARC_API_KEY / OSPARC_API_SECRET in notebooks to access the API (see [PR #29](https://github.com/ITISFoundation/jupyter-math/pull/29))
   
 ## [3.0.0] - 2024-04-08
-- Added inactivity detection, see https://github.com/ITISFoundation/jupyter-math/pull/27
-- 
+- Added inactivity detection, (see [PR #27](https://github.com/ITISFoundation/jupyter-math/pull/27))
+
 ## [2.0.6] - 2022-05-08
 - shell and kernel now use the same python interpreter
 - fixes issue crashing when trusting notebooks
