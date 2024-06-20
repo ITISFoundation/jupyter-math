@@ -54,6 +54,18 @@ cat > .jupyter_config.json <<EOF
 }
 EOF
 
+# cookie security options for cross domain
+cat > "$HOME/.jupyter/jupyter_notebook_config.py" <<EOF
+c.JupyterHub.tornado_settings = {
+    'cookie_options': {'SameSite': 'Strict', 'Secure': True}
+}
+
+c.NotebookApp.tornado_settings = {
+    'cookie_options': {'SameSite': 'Strict', 'Secure': True}
+}
+c.NotebookApp.disable_check_xsrf = True
+EOF
+
 cat > "/opt/conda/share/jupyter/lab/overrides.json" <<EOF
 {
      "@krassowski/jupyterlab-lsp:completion": {
