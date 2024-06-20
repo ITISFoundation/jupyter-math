@@ -4,7 +4,7 @@ SHELL = /bin/sh
 .DEFAULT_GOAL := help
 
 export DOCKER_IMAGE_NAME ?= jupyter-math
-export DOCKER_IMAGE_TAG ?= 3.0.2
+export DOCKER_IMAGE_TAG ?= 3.0.3
 
 
 # PYTHON ENVIRON ---------------------------------------------------------------------------------------

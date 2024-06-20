@@ -1,5 +1,8 @@
 # Changelog
 
+## [3.0.3] - 2024-06-20
+- attempt at fixing issues with usability on Firefox and Safari
+
 ## [3.0.2] - 2024-02-02
 - Allows users to use OSPARC_API_HOST / OSPARC_API_KEY / OSPARC_API_SECRET in notebooks to access the API (see [PR #29](https://github.com/ITISFoundation/jupyter-math/pull/29))
   
