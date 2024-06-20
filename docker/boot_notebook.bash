@@ -54,6 +54,7 @@ cat > .jupyter_config.json <<EOF
 }
 EOF
 
+# SEE https://jupyter-server.readthedocs.io/en/latest/other/full-config.html
 cat > "$HOME/.jupyter/jupyter_notebook_config.py" <<EOF
 c.JupyterHub.tornado_settings = {
     'cookie_options': {'SameSite': 'None', 'Secure': True}
