@@ -35,3 +35,4 @@ After a new service version has been published on the master deployment, it can 
 
 ### Changelog
 v2.0.10 (2023-12-11): add openBLAS for faster Octave solution 
+
