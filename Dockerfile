@@ -93,7 +93,7 @@ ENV JP_LSP_VIRTUAL_DIR="/home/${NB_USER}/.virtual_documents"
 COPY --chown=$NB_UID:$NB_GID docker /docker
 
 # install service activity monitor
-ARG ACTIVITY_MONITOR_VERSION=v0.0.4
+ARG ACTIVITY_MONITOR_VERSION=v0.0.5
 
 # Detection thresholds for application
 ENV ACTIVITY_MONITOR_BUSY_THRESHOLD_CPU_PERCENT=0.5
