@@ -1,5 +1,8 @@
 # Changelog
 
+## [3.0.4] - 2025-03-12
+- fixed an issue that made activity monitor to trigger errors
+
 ## [3.0.3] - 2024-06-20
 - attempt at fixing issues with usability on Firefox and Safari
 
