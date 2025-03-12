@@ -10,6 +10,6 @@ Makefile            @GitHK
 
 # NOTE: '/' denotes the root of the repository
 /.github/            @pcrespov @GitHK
-/.osparc/            @pcrespov @GitHK @elisabettai
-/kernels/            @elisabettai
+/.osparc/            @pcrespov @GitHK
+/kernels/            @GitHK
 /docker/             @pcrespov @GitHK
