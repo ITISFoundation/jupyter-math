@@ -13,22 +13,19 @@ export DOCKER_IMAGE_TAG ?= 3.0.5
 	@python3 --version
 	python3 -m venv $@
 	# upgrading package managers
-	$@/bin/pip install --upgrade \
-		pip \
-		wheel \
-		setuptools
+	$@/bin/pip install --upgrade uv
 
 devenv: .venv  ## create a python virtual environment with tools to dev, run and tests cookie-cutter
 	# installing extra tools
-	@$</bin/pip3 install pip-tools
+	@$</bin/uv pip install wheel setuptools
 	# your dev environment contains
-	@$</bin/pip3 list
+	@$</bin/uv pip list
 	@echo "To activate the virtual environment, run 'source $</bin/activate'"
 
 # Upgrades and tracks python packages versions installed in the service ---------------------------------
 requirements: devenv ## runs pip-tools to build requirements.txt that will be installed in the JupyterLab
 	# freezes requirements
-	pip-compile kernels/python-maths/requirements.in --resolver=backtracking --output-file kernels/python-maths/requirements.txt
+	uv pip compile kernels/python-maths/requirements.in --output-file kernels/python-maths/requirements.txt
 
 # Builds new service version ----------------------------------------------------------------------------
 define _bumpversion
