@@ -1,4 +1,3 @@
-version: '3.7'
 services:
   jupyter-math:
     image: simcore/services/dynamic/jupyter-math:3.0.5
