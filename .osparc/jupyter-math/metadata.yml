@@ -1,13 +1,7 @@
 name: JupyterLab Math (Python+Octave)
-thumbnail: https://upload.wikimedia.org/wikipedia/commons/thumb/3/38/Jupyter_logo.svg/1024px-Jupyter_logo.svg.png
-description:
-  "[JupyterLab](https://jupyter.org/) with **math** kernels in [octave](https://www.gnu.org/software/octave/index)
-  (largely compatible with Matlab code) and python. Python kernel includes popular
-  math packages like [numpy](https://numpy.org/), [pandas](https://pandas.pydata.org/),
-  [matplotlib](https://matplotlib.org/), [plotly](https://plotly.com/python/) and
-  [scipy](https://www.scipy.org/) packages (see requirements.txt list)
-
-  "
+description: https://raw.githubusercontent.com/ZurichMedTech/s4l-assets/refs/heads/main/app/full/services/simcore_services_dynamic_jupyter-math.md
+icon: https://raw.githubusercontent.com/ZurichMedTech/s4l-assets/main/app/icons/s4l/simcore_services_dynamic_jupyter-math.png
+thumbnail: https://raw.githubusercontent.com/ZurichMedTech/s4l-assets/main/app/thumbnails/s4l/simcore_services_dynamic_jupyter-math.png
 key: simcore/services/dynamic/jupyter-math
 version: 3.0.4
 integration-version: 2.0.0
