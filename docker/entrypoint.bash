@@ -58,11 +58,11 @@ else
     echo "adding $NB_USER to group $CONTAINER_GROUPNAME..."
     usermod --append --groups "$CONTAINER_GROUPNAME" "$NB_USER" 
     
-    echo "Changing owner ship of state directory /home/${NB_USER}/work/workspace"
+    echo "Changing ownership of state directory /home/${NB_USER}/work/workspace"
     chown --recursive "$NB_USER" "/home/${NB_USER}/work/workspace"
-    echo "Changing owner ship of state directory ${DY_SIDECAR_PATH_INPUTS}"
+    echo "Changing ownership of state directory ${DY_SIDECAR_PATH_INPUTS}"
     chown --recursive "$NB_USER" "${DY_SIDECAR_PATH_INPUTS}"
-    echo "Changing owner ship of state directory ${DY_SIDECAR_PATH_OUTPUTS}"
+    echo "Changing ownership of state directory ${DY_SIDECAR_PATH_OUTPUTS}"
     chown --recursive "$NB_USER" "${DY_SIDECAR_PATH_OUTPUTS}"
 fi
 
