@@ -17,6 +17,7 @@ xlwt
 ipyevents
 ipympl
 ipywidgets
+jupyter-collaboration
 jupyterlab
 jupyterlab_latex
 jupyterlab_widgets
