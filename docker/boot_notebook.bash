@@ -51,7 +51,6 @@ cat > .jupyter_config.json <<EOF
         "open_browser": false,
         "port": 8888,
         "quit_button": false,
-        "root_dir": "${NOTEBOOK_BASE_DIR}",
         "webbrowser_open_new": 0
     }
 }
