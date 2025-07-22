@@ -4,6 +4,8 @@
 set -euo pipefail
 IFS=$'\n\t'
 INFO="INFO: [$(basename "$0")] "
+WARNING="WARNING: [$(basename "$0")] "
+ERROR="ERROR: [$(basename "$0")] "
 
 echo "$INFO" "  User    :$(id "$(whoami)")"
 echo "$INFO" "  Workdir :$(pwd)"
@@ -87,13 +89,14 @@ source .venv/bin/activate
 #   initiated (only for the owner of the coresponding study)
 VOILA_NOTEBOOK="${NOTEBOOK_BASE_DIR}"/workspace/voila.ipynb
 
-if [ "${DY_BOOT_OPTION_BOOT_MODE}" -ne 0 ]; then
-    echo "$INFO" "Found DY_BOOT_OPTION_BOOT_MODE=${DY_BOOT_OPTION_BOOT_MODE}... Trying to start in voila mode"
-fi
-
-if [ "${DY_BOOT_OPTION_BOOT_MODE}" -eq 1 ] && [ -f "${VOILA_NOTEBOOK}" ]; then
-    echo "$INFO" "Found ${VOILA_NOTEBOOK}... Starting in voila mode"
-    voila "${VOILA_NOTEBOOK}" --enable_nbextensions=True --port 8888 --Voila.ip="0.0.0.0" --no-browser
+if [ "${DY_BOOT_OPTION_BOOT_MODE}" -eq 1 ]; then
+    if [ -f "${VOILA_NOTEBOOK}" ]; then
+        echo "$INFO" "Found ${VOILA_NOTEBOOK}... Starting in voila mode"
+        voila "${VOILA_NOTEBOOK}" --enable_nbextensions=True --port 8888 --Voila.ip="0.0.0.0" --no-browser
+    else
+        echo "$ERROR" "VOILA_NOTEBOOK (${VOILA_NOTEBOOK}) not found! Cannot start in voila mode."
+        exit 1
+    fi
 else
     # call the notebook with the basic parameters
     start-notebook.sh --config .jupyter_config.json "$@" --LabApp.default_url='/lab/tree/workspace/README.ipynb' --LabApp.collaborative=True
