@@ -10,7 +10,7 @@ echo "$INFO" "  Workdir :$(pwd)"
 
 # Trust all notebooks in the notebooks folder
 echo "$INFO" "trust all notebooks in path..."
-find "${NOTEBOOK_BASE_DIR}" -name '*.ipynb' -type f | xargs -I % /bin/bash -c 'jupyter trust "%" || true' || true
+find "${NOTEBOOK_BASE_DIR}" -name '*.ipynb' -type f -print0 | xargs -0 -I % /bin/bash -c 'jupyter trust "%" || true' || true
 
 # Configure
 # Prevents notebook to open in separate tab
@@ -27,9 +27,15 @@ cat > .jupyter_config.json <<EOF
     "FileCheckpoints": {
         "checkpoint_dir": "/home/jovyan/._ipynb_checkpoints/"
     },
+    "FileContentsManager": {
+        "preferred_dir": "${NOTEBOOK_BASE_DIR}/workspace/"
+    },
+    "IdentityProvider": {
+        "token": "${NOTEBOOK_TOKEN}"
+    },
     "KernelSpecManager": {
         "ensure_native_kernel": false,
-        "whitelist": ["python-maths", "octave"]
+        "allowed_kernelspecs": ["python-maths", "octave"]
     },
     "Session": {
         "debug": false
@@ -42,13 +48,11 @@ cat > .jupyter_config.json <<EOF
         "disable_check_xsrf": true,
         "extra_static_paths": ["/static"],
         "ip": "0.0.0.0",
-        "notebook_dir": "${NOTEBOOK_BASE_DIR}",
+        "root_dir": "${NOTEBOOK_BASE_DIR}",
         "open_browser": false,
         "port": 8888,
-        "preferred_dir": "${NOTEBOOK_BASE_DIR}/workspace/",
         "quit_button": false,
         "root_dir": "${NOTEBOOK_BASE_DIR}",
-        "token": "${NOTEBOOK_TOKEN}",
         "webbrowser_open_new": 0
     }
 }
@@ -92,5 +96,5 @@ if [ "${DY_BOOT_OPTION_BOOT_MODE}" -eq 1 ] && [ -f "${VOILA_NOTEBOOK}" ]; then
     voila "${VOILA_NOTEBOOK}" --enable_nbextensions=True --port 8888 --Voila.ip="0.0.0.0" --no-browser
 else
     # call the notebook with the basic parameters
-    start-notebook.sh --config .jupyter_config.json "$@" --LabApp.default_url='/lab/tree/workspace/README.ipynb' 
+    start-notebook.sh --config .jupyter_config.json "$@" --LabApp.default_url='/lab/tree/workspace/README.ipynb' --LabApp.collaborative=True
 fi
