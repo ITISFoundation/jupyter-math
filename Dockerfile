@@ -21,6 +21,7 @@ RUN apt-get update && \
   dvipng \
   gosu \
   octave=8.4.0-1build5 \
+  octave-dev=8.4.0-1build5 \
   gnuplot \
   bc \
   ghostscript \
@@ -33,9 +34,9 @@ RUN apt-get update && \
   && \
   apt-get clean && rm -rf /var/lib/apt/lists/* 
 
-RUN octave --no-window-system --eval 'pkg install "https://downloads.sourceforge.net/project/octave/Octave%20Forge%20Packages/Individual%20Package%20Releases/io-2.6.4.tar.gz"' && \
-  octave --no-window-system --eval 'pkg install "https://downloads.sourceforge.net/project/octave/Octave%20Forge%20Packages/Individual%20Package%20Releases/statistics-1.4.3.tar.gz"' && \
-  octave --no-window-system --eval 'pkg install "https://downloads.sourceforge.net/project/octave/Octave%20Forge%20Packages/Individual%20Package%20Releases/image-2.14.0.tar.gz"'    
+RUN octave --no-window-system --eval 'pkg install "https://downloads.sourceforge.net/project/octave/Octave%20Forge%20Packages/Individual%20Package%20Releases/io-2.7.0.tar.gz"' && \
+  octave --no-window-system --eval 'pkg install "https://github.com/gnu-octave/statistics/archive/refs/tags/release-1.7.4.tar.gz"' && \
+  octave --no-window-system --eval 'pkg install "https://downloads.sourceforge.net/project/octave/Octave%20Forge%20Packages/Individual%20Package%20Releases/image-2.16.1.tar.gz"'
 
 RUN pip --no-cache --quiet install --upgrade \
   pip \
@@ -54,7 +55,7 @@ USER root
 WORKDIR ${HOME}
 
 RUN python3 -m venv .venv &&\
-  .venv/bin/pip --no-cache --quiet install --upgrade pip~=21.3 wheel setuptools &&\
+  .venv/bin/pip --no-cache --quiet install --upgrade pip~=25.1 wheel setuptools &&\
   .venv/bin/pip --no-cache --quiet install ipykernel &&\
   .venv/bin/python -m ipykernel install \
   --user \
@@ -64,16 +65,13 @@ RUN python3 -m venv .venv &&\
   echo y | .venv/bin/python -m jupyter kernelspec uninstall python3 &&\
   .venv/bin/python -m jupyter kernelspec list
 
-# copy and resolve dependecies to be up to date
+# copy and resolve dependencies to be up to date
 COPY --chown=$NB_UID:$NB_GID kernels/python-maths/requirements.txt ${NOTEBOOK_BASE_DIR}/requirements.txt
 RUN .venv/bin/pip --no-cache install pip-tools && \
   .venv/bin/pip --no-cache install -r ${NOTEBOOK_BASE_DIR}/requirements.txt
 
-RUN jupyter serverextension enable voila && \
-  jupyter server extension enable voila
-
 # Import matplotlib the first time to build the font cache.
-ENV XDG_CACHE_HOME /home/$NB_USER/.cache/
+ENV XDG_CACHE_HOME=/home/$NB_USER/.cache/
 RUN MPLBACKEND=Agg .venv/bin/python -c "import matplotlib.pyplot" && \
   fix-permissions /home/$NB_USER
 # run fix permissions only once. This can be probably optimized, so it is faster to build
