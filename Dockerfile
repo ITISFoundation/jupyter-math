@@ -1,5 +1,5 @@
-ARG JUPYTER_MINIMAL_VERSION=lab-3.3.2@sha256:a4bf48221bfa864759e0f248affec3df1af0a68ee3e43dfc7435d84926ec92e8
-FROM jupyter/minimal-notebook:${JUPYTER_MINIMAL_VERSION}
+ARG JUPYTER_MINIMAL_VERSION=lab-4.4.5@sha256:ea1adac6ee075cdadcbba6020ed5e67198814dae04d26d5d8e87417caf9f3a3d
+FROM quay.io/jupyter/minimal-notebook:${JUPYTER_MINIMAL_VERSION}
 
 
 LABEL maintainer="pcrespov"
