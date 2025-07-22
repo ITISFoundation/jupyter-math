@@ -1,3 +1,4 @@
+# this is Ubuntu 24.04.2 LTS (noble)
 ARG JUPYTER_MINIMAL_VERSION=lab-4.4.5@sha256:ea1adac6ee075cdadcbba6020ed5e67198814dae04d26d5d8e87417caf9f3a3d
 FROM quay.io/jupyter/minimal-notebook:${JUPYTER_MINIMAL_VERSION}
 
@@ -13,15 +14,14 @@ USER root
 
 RUN apt-get update && \
   apt-get install -y --no-install-recommends \
-  libopenblas-base \
+  libopenblas0 \
   gfortran \
   ffmpeg \
   make \
   dvipng \
   gosu \
-  octave=5.2.0-1 \
+  octave=8.4.0-1build5 \
   gnuplot \
-  liboctave-dev \
   bc \
   ghostscript \
   texlive-xetex \
