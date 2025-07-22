@@ -8,18 +8,26 @@ export DOCKER_IMAGE_TAG ?= 4.0.0
 
 
 # PYTHON ENVIRON ---------------------------------------------------------------------------------------
+.check-uv-installed:
+	@echo "Checking if 'uv' is installed..."
+	@if ! command -v uv >/dev/null 2>&1; then \
+			curl -LsSf https://astral.sh/uv/install.sh | sh; \
+	else \
+			printf "\033[32m'uv' is installed. Version: \033[0m"; \
+			uv --version; \
+	fi
+	# upgrading uv
+	-@uv self --quiet update
+
 .PHONY: devenv
-.venv:
-	@python3 --version
-	python3 -m venv $@
-	# upgrading package managers
-	$@/bin/pip install --upgrade uv
+.venv: .check-uv-installed
+	@uv venv $@
 
 devenv: .venv  ## create a python virtual environment with tools to dev, run and tests cookie-cutter
 	# installing extra tools
-	@$</bin/uv pip install wheel setuptools
+	@uv pip install wheel setuptools
 	# your dev environment contains
-	@$</bin/uv pip list
+	@uv pip list
 	@echo "To activate the virtual environment, run 'source $</bin/activate'"
 
 # Upgrades and tracks python packages versions installed in the service ---------------------------------
