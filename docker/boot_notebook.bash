@@ -42,9 +42,6 @@ cat > .jupyter_config.json <<EOF
     "Session": {
         "debug": false
     },
-    "VoilaConfiguration" : {
-        "enable_nbextensions" : true
-    },
     "ServerApp": {
         "base_url": "",
         "disable_check_xsrf": true,
@@ -92,7 +89,7 @@ VOILA_NOTEBOOK="${NOTEBOOK_BASE_DIR}"/workspace/voila.ipynb
 if [ "${DY_BOOT_OPTION_BOOT_MODE}" -eq 1 ]; then
     if [ -f "${VOILA_NOTEBOOK}" ]; then
         echo "$INFO" "Found ${VOILA_NOTEBOOK}... Starting in voila mode"
-        voila "${VOILA_NOTEBOOK}" --enable_nbextensions=True --port 8888 --Voila.ip="0.0.0.0" --no-browser
+        voila "${VOILA_NOTEBOOK}" --port 8888 --Voila.ip="0.0.0.0" --no-browser
     else
         echo "$ERROR" "VOILA_NOTEBOOK (${VOILA_NOTEBOOK}) not found! Cannot start in voila mode."
         exit 1
