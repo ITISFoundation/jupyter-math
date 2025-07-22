@@ -110,4 +110,6 @@ RUN echo 'export PATH="/home/${NB_USER}/.venv/bin:$PATH"' >> "/home/${NB_USER}/.
 
 EXPOSE 8888
 
+HEALTHCHECK --interval=30s --timeout=30s --start-period=30s --retries=3 CMD [ "/docker/docker_healthcheck.bash" ]
+
 ENTRYPOINT [ "/bin/bash", "/docker/entrypoint.bash" ]
