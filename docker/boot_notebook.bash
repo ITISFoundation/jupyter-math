@@ -12,9 +12,11 @@ echo "$INFO" "  Workdir :$(pwd)"
 
 # Trust all notebooks in the notebooks folder
 echo "$INFO" "trust all notebooks in path..."
-# Try to trust all notebooks, warn if any fail
-if ! find "${NOTEBOOK_BASE_DIR}" -name '*.ipynb' -type f -exec jupyter trust {} +; then
-    echo "$WARNING" "Some notebooks could not be trusted."
+# Try to trust all notebooks, warn if any fail, info if all succeeded
+if find "${NOTEBOOK_BASE_DIR}" -name '*.ipynb' -type f -exec jupyter trust {} +; then
+    echo "$INFO" "All notebooks trusted successfully."
+else
+    echo "$WARNING" "Some notebooks could not be trusted. TIP: please review the notebooks in ${NOTEBOOK_BASE_DIR}."
 fi
 
 # Configure
