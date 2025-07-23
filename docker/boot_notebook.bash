@@ -12,7 +12,7 @@ echo "$INFO" "  Workdir :$(pwd)"
 
 # Trust all notebooks in the notebooks folder
 echo "$INFO" "trust all notebooks in path..."
-find "${NOTEBOOK_BASE_DIR}" -name '*.ipynb' -type f -print0 | xargs -0 -I % /bin/bash -c 'jupyter trust "%" || true' || true
+find "${NOTEBOOK_BASE_DIR}" -name '*.ipynb' -type f -exec jupyter trust {} + || true
 
 # Configure
 # Prevents notebook to open in separate tab
