@@ -33,3 +33,4 @@ compose-spec:
         - OSPARC_API_KEY=$$$${OSPARC_VARIABLE_API_KEY}                                                                                                
         - OSPARC_API_SECRET=$$$${OSPARC_VARIABLE_API_SECRET}
 container-http-entrypoint: jupyter-math
+is-collaborative: True
