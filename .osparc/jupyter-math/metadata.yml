@@ -3,7 +3,7 @@ description: https://raw.githubusercontent.com/ZurichMedTech/s4l-assets/refs/hea
 icon: https://raw.githubusercontent.com/ZurichMedTech/s4l-assets/main/app/icons/s4l/simcore_services_dynamic_jupyter-math.png
 thumbnail: https://raw.githubusercontent.com/ZurichMedTech/s4l-assets/main/app/thumbnails/s4l/simcore_services_dynamic_jupyter-math.png
 key: simcore/services/dynamic/jupyter-math
-version: 3.0.5
+version: 3.1.0
 integration-version: 2.0.0
 type: dynamic
 authors:

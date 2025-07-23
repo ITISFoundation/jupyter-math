@@ -1,5 +1,16 @@
 # Changelog
 
+## [3.1.0] - 2025-07-23
+- Updated base image to Ubuntu 24.04 and JupyterLab 4.4.5.
+- Upgraded Octave to 8.4.0 and switched to libopenblas0.
+- Updated Octave Forge package versions.
+- Added collaborative mode support (jupyter-collaboration).
+- Refactored and optimized Dockerfile, including new healthcheck logic.
+- Improved and fixed scripts for Voila mode and error handling.
+- Upgraded Python dependencies and tools (pip 25.1, requirements updates).
+- Enhanced boot and entrypoint scripts, improved logging and error messages.
+- Updated CI and Makefile for new build tools and image versions.
+
 ## [3.0.4] - 2025-03-12
 - fixed an issue that made activity monitor to trigger errors
 

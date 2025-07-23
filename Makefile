@@ -4,22 +4,30 @@ SHELL = /bin/sh
 .DEFAULT_GOAL := help
 
 export DOCKER_IMAGE_NAME ?= jupyter-math
-export DOCKER_IMAGE_TAG ?= 3.0.5
+export DOCKER_IMAGE_TAG ?= 3.1.0
 
 
 # PYTHON ENVIRON ---------------------------------------------------------------------------------------
+.check-uv-installed:
+	@echo "Checking if 'uv' is installed..."
+	@if ! command -v uv >/dev/null 2>&1; then \
+			curl -LsSf https://astral.sh/uv/install.sh | sh; \
+	else \
+			printf "\033[32m'uv' is installed. Version: \033[0m"; \
+			uv --version; \
+	fi
+	# upgrading uv
+	-@uv self --quiet update
+
 .PHONY: devenv
-.venv:
-	@python3 --version
-	python3 -m venv $@
-	# upgrading package managers
-	$@/bin/pip install --upgrade uv
+.venv: .check-uv-installed
+	@uv venv $@
 
 devenv: .venv  ## create a python virtual environment with tools to dev, run and tests cookie-cutter
 	# installing extra tools
-	@$</bin/uv pip install wheel setuptools
+	@uv pip install wheel setuptools
 	# your dev environment contains
-	@$</bin/uv pip list
+	@uv pip list
 	@echo "To activate the virtual environment, run 'source $</bin/activate'"
 
 # Upgrades and tracks python packages versions installed in the service ---------------------------------
@@ -32,7 +40,7 @@ define _bumpversion
 	# upgrades as $(subst $(1),,$@) version, commits and tags
 	@docker run -it --rm -v $(PWD):/${DOCKER_IMAGE_NAME} \
 		-u $(shell id -u):$(shell id -g) \
-		itisfoundation/ci-service-integration-library:v2.0.11 \
+		itisfoundation/ci-service-integration-library:v2.1.25 \
 		sh -c "cd /${DOCKER_IMAGE_NAME} && bump2version --verbose --list --config-file $(1) $(subst $(2),,$@)"
 endef
 
@@ -46,7 +54,7 @@ version-patch version-minor version-major: .bumpversion.cfg ## increases service
 compose-spec: ## runs ooil to assemble the docker-compose.yml file
 	@docker run -it --rm -v $(PWD):/${DOCKER_IMAGE_NAME} \
 		-u $(shell id -u):$(shell id -g) \
-		itisfoundation/ci-service-integration-library:v2.0.11 \
+		itisfoundation/ci-service-integration-library:v2.1.25 \
 		sh -c "cd /${DOCKER_IMAGE_NAME} && ooil compose"
 
 build: | compose-spec	## build docker image
