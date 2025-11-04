@@ -1,6 +1,6 @@
 services:
   jupyter-math:
-    image: simcore/services/dynamic/jupyter-math:3.1.0
+    image: simcore/services/dynamic/jupyter-math:3.1.1
     ports:
       - "8888:8888"
     environment:
