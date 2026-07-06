@@ -20,7 +20,7 @@ paths-mapping:
     - /home/jovyan/work/workspace
 callbacks-mapping:
   inactivity:
-    service: container
+    service: jupyter-math
     command: ["python", "/usr/local/bin/service-monitor/activity.py"]
     timeout: 1
 compose-spec:                                                                                                                                       
